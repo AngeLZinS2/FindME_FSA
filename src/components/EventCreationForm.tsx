@@ -1,4 +1,3 @@
-
 import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -72,22 +71,45 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
       // Obter eventos existentes ou inicializar array vazio
       const userEvents = JSON.parse(localStorage.getItem("userEvents") || "[]");
       
+      // Obter eventos para análise do admin ou inicializar array vazio
+      const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
+      
+      // Formatar data combinando date e time
+      const eventDate = new Date(`${data.date}T${data.time}`);
+      
       // Adicionar o novo evento com ID único
       const newEvent = {
         id: Date.now(),
-        ...data,
-        creatorId: user.email,
-        creatorName: user.name,
-        status: "active",
+        titulo: data.title,
+        descricao: data.description,
+        data: eventDate,
+        local: data.location,
+        categoria: data.category,
+        capacidade: parseInt(data.capacity),
+        preco: data.price ? parseFloat(data.price) : 0,
+        organizador: user.name,
+        organizadorId: user.email,
+        status: "pendente", // Agora o evento começa como pendente para aprovação
         attendees: [],
       };
       
-      userEvents.push(newEvent);
+      // Adicionar ao array de eventos do usuário
+      userEvents.push({
+        ...newEvent,
+        date: data.date,  // Manter o formato original para compatibilidade
+        time: data.time,  // Manter o formato original para compatibilidade
+      });
+      
+      // Adicionar ao array de eventos para aprovação do admin
+      adminEvents.push(newEvent);
+      
+      // Salvar ambos arrays no localStorage
       localStorage.setItem("userEvents", JSON.stringify(userEvents));
+      localStorage.setItem("adminEvents", JSON.stringify(adminEvents));
       
       toast({
-        title: "Evento criado com sucesso!",
-        description: `O evento "${data.title}" foi cadastrado.`,
+        title: "Evento enviado para aprovação!",
+        description: `O evento "${data.title}" foi cadastrado e está aguardando aprovação do administrador.`,
       });
       
       // Limpar formulário

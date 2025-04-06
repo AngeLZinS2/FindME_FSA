@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar, CheckCircle2, XCircle, Eye, Clock, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 // Dados mockados para eventos
 const initialEvents = [
@@ -71,26 +72,64 @@ const initialEvents = [
 ];
 
 const AdminEventos = () => {
-  const [eventos, setEventos] = useState(initialEvents);
-  const [selectedEvent, setSelectedEvent] = useState<typeof initialEvents[0] | null>(null);
+  const [eventos, setEventos] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("todos");
   const [motivoRejeicao, setMotivoRejeicao] = useState("");
   
   const { toast } = useToast();
+  
+  // Carregar eventos quando o componente montar
+  useEffect(() => {
+    // Obter eventos criados pelos usuários do localStorage
+    const userCreatedEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
+    
+    // Combinar com os eventos mockados
+    const allEvents = [...initialEvents, ...userCreatedEvents];
+    
+    // Converter strings de datas para objetos Date para eventos que chegam do localStorage
+    const eventsWithProperDates = allEvents.map(event => {
+      // Se o evento vier do localStorage, sua data já é uma string
+      if (typeof event.data === 'string') {
+        return {
+          ...event,
+          data: new Date(event.data)
+        };
+      }
+      return event;
+    });
+    
+    setEventos(eventsWithProperDates);
+  }, []);
 
-  const openEventDetails = (event: typeof initialEvents[0]) => {
+  const openEventDetails = (event) => {
     setSelectedEvent(event);
     setIsDialogOpen(true);
     setMotivoRejeicao("");
   };
 
-  const approveEvent = (id: number) => {
+  const approveEvent = (id) => {
+    // Atualizar no estado local
     setEventos(
       eventos.map((event) =>
         event.id === id ? { ...event, status: "aprovado" } : event
       )
     );
+    
+    // Atualizar no localStorage para eventos criados por usuários
+    const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
+    const updatedAdminEvents = adminEvents.map((event) =>
+      event.id === id ? { ...event, status: "aprovado" } : event
+    );
+    localStorage.setItem("adminEvents", JSON.stringify(updatedAdminEvents));
+    
+    // Atualizar no localStorage para a visualização do usuário
+    const userEvents = JSON.parse(localStorage.getItem("userEvents") || "[]");
+    const updatedUserEvents = userEvents.map((event) =>
+      event.id === id ? { ...event, status: "aprovado" } : event
+    );
+    localStorage.setItem("userEvents", JSON.stringify(updatedUserEvents));
     
     setIsDialogOpen(false);
     
@@ -100,7 +139,7 @@ const AdminEventos = () => {
     });
   };
 
-  const rejectEvent = (id: number) => {
+  const rejectEvent = (id) => {
     if (!motivoRejeicao) {
       toast({
         variant: "destructive",
@@ -110,11 +149,26 @@ const AdminEventos = () => {
       return;
     }
     
+    // Atualizar no estado local
     setEventos(
       eventos.map((event) =>
         event.id === id ? { ...event, status: "rejeitado", motivoRejeicao } : event
       )
     );
+    
+    // Atualizar no localStorage para eventos criados por usuários
+    const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
+    const updatedAdminEvents = adminEvents.map((event) =>
+      event.id === id ? { ...event, status: "rejeitado", motivoRejeicao } : event
+    );
+    localStorage.setItem("adminEvents", JSON.stringify(updatedAdminEvents));
+    
+    // Atualizar no localStorage para a visualização do usuário
+    const userEvents = JSON.parse(localStorage.getItem("userEvents") || "[]");
+    const updatedUserEvents = userEvents.map((event) =>
+      event.id === id ? { ...event, status: "rejeitado", motivoRejeicao } : event
+    );
+    localStorage.setItem("userEvents", JSON.stringify(updatedUserEvents));
     
     setIsDialogOpen(false);
     
@@ -176,7 +230,7 @@ const AdminEventos = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {format(event.data, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      {format(new Date(event.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                     </div>
                     <div>
                       <span className="font-medium">Local:</span> {event.local}
@@ -218,7 +272,7 @@ const AdminEventos = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-medium">Data e Horário</h3>
-                  <p>{format(selectedEvent.data, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                  <p>{format(new Date(selectedEvent.data), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
                 </div>
                 <div>
                   <h3 className="font-medium">Local</h3>
@@ -250,8 +304,8 @@ const AdminEventos = () => {
                 <>
                   <div className="bg-muted p-4 rounded-md">
                     <h3 className="font-medium mb-2">Motivo da rejeição (opcional)</h3>
-                    <textarea
-                      className="w-full h-20 p-2 rounded-md border border-input resize-none bg-background"
+                    <Textarea
+                      className="w-full resize-none bg-background"
                       placeholder="Informe o motivo caso vá rejeitar o evento..."
                       value={motivoRejeicao}
                       onChange={(e) => setMotivoRejeicao(e.target.value)}
@@ -282,7 +336,7 @@ const AdminEventos = () => {
 };
 
 // Componente de badge para status
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({ status }) => {
   switch (status) {
     case "aprovado":
       return (
