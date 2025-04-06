@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save, LogOut, User } from "lucide-react";
+import { Save, LogOut, User, Calendar, CalendarPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import EventCreationForm from "@/components/EventCreationForm";
+import UserEvents from "@/components/UserEvents";
 
 // Esquema de validação para o formulário de perfil
 const profileSchema = z.object({
@@ -34,7 +37,9 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 const Profile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [searchParams] = useSearchParams();
+  const [user, setUser] = useState<{ name: string; email: string; userType?: string } | null>(null);
+  const defaultTab = searchParams.get("tab") || "profile";
 
   useEffect(() => {
     // Verificar se o usuário está logado
@@ -68,10 +73,14 @@ const Profile = () => {
     console.log("Dados de perfil atualizados:", data);
     
     // Atualizar os dados no localStorage
-    localStorage.setItem("currentUser", JSON.stringify({ email: data.email, name: data.name }));
+    localStorage.setItem("currentUser", JSON.stringify({ 
+      ...user,
+      email: data.email, 
+      name: data.name 
+    }));
     
     // Atualizar o estado
-    setUser({ email: data.email, name: data.name });
+    setUser(prev => prev ? { ...prev, email: data.email, name: data.name } : null);
     
     toast({
       title: "Perfil atualizado",
@@ -96,6 +105,8 @@ const Profile = () => {
     return null; // Aguardando redirecionamento ou carregando
   }
 
+  const isCreator = user.userType === "creator";
+
   return (
     <div className="container mx-auto py-12">
       <div className="flex flex-col md:flex-row gap-6">
@@ -107,6 +118,9 @@ const Profile = () => {
               </Avatar>
               <CardTitle className="mt-4">{user.name}</CardTitle>
               <CardDescription>{user.email}</CardDescription>
+              {isCreator && (
+                <Badge className="mt-2" variant="secondary">Criador de Eventos</Badge>
+              )}
             </CardHeader>
             <CardContent>
               <Button variant="outline" className="w-full mb-2" onClick={handleLogout}>
@@ -117,10 +131,13 @@ const Profile = () => {
         </div>
         
         <div className="flex-1">
-          <Tabs defaultValue="profile">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue={defaultTab}>
+            <TabsList className={`grid w-full ${isCreator ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <TabsTrigger value="profile">Perfil</TabsTrigger>
               <TabsTrigger value="events">Meus Eventos</TabsTrigger>
+              {isCreator && (
+                <TabsTrigger value="create">Criar Evento</TabsTrigger>
+              )}
             </TabsList>
             
             <TabsContent value="profile">
@@ -204,20 +221,47 @@ const Profile = () => {
                 <CardHeader>
                   <CardTitle>Meus Eventos</CardTitle>
                   <CardDescription>
-                    Eventos que você demonstrou interesse ou está participando
+                    {isCreator 
+                      ? "Eventos criados por você" 
+                      : "Eventos que você demonstrou interesse ou está participando"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12 text-muted-foreground">
-                    <User className="mx-auto h-12 w-12 mb-4" />
-                    <p>Você ainda não participou de nenhum evento</p>
-                    <Button variant="link" onClick={() => navigate("/eventos")}>
-                      Explorar Eventos
-                    </Button>
-                  </div>
+                  {isCreator ? (
+                    <UserEvents />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Calendar className="mx-auto h-12 w-12 mb-4" />
+                      <p>Você ainda não participou de nenhum evento</p>
+                      <Button variant="link" onClick={() => navigate("/eventos")}>
+                        Explorar Eventos
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
+            
+            {isCreator && (
+              <TabsContent value="create">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Criar Novo Evento</CardTitle>
+                    <CardDescription>
+                      Preencha os detalhes para publicar um novo evento
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EventCreationForm 
+                      onSuccess={() => {
+                        // Navegar para a aba de eventos após criar com sucesso
+                        navigate("/perfil?tab=events");
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>

@@ -16,6 +16,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +33,9 @@ const registerSchema = z.object({
   email: z.string().email("Digite um email válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string().min(6, "A confirmação de senha deve ter pelo menos 6 caracteres"),
+  userType: z.enum(["attendee", "creator"], {
+    required_error: "Selecione o tipo de usuário",
+  }),
 }).refine(data => data.password === data.confirmPassword, {
   message: "As senhas não conferem",
   path: ["confirmPassword"],
@@ -44,6 +54,7 @@ const Register = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      userType: "attendee",
     },
   });
 
@@ -52,7 +63,11 @@ const Register = () => {
     console.log("Dados de registro:", data);
     
     // Simular um registro bem-sucedido
-    localStorage.setItem("currentUser", JSON.stringify({ email: data.email, name: data.name }));
+    localStorage.setItem("currentUser", JSON.stringify({ 
+      email: data.email, 
+      name: data.name,
+      userType: data.userType
+    }));
     
     toast({
       title: "Registro concluído",
@@ -126,6 +141,28 @@ const Register = () => {
                       <FormControl>
                         <Input type="password" placeholder="••••••" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="userType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de conta</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo de conta" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="attendee">Participante de Eventos</SelectItem>
+                          <SelectItem value="creator">Criador de Eventos</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

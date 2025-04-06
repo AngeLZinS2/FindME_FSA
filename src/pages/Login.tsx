@@ -30,7 +30,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 // Dados de usuários mockados (em uma aplicação real, isso viria de um banco de dados)
 const users = [
-  { email: "usuario@exemplo.com", password: "senha123", name: "Usuário Teste" }
+  { email: "usuario@exemplo.com", password: "senha123", name: "Usuário Teste", userType: "attendee" },
+  { email: "criador@exemplo.com", password: "senha123", name: "Criador de Eventos", userType: "creator" }
 ];
 
 const Login = () => {
@@ -53,7 +54,11 @@ const Login = () => {
 
     if (user) {
       // Em uma aplicação real, você armazenaria um token JWT ou similar
-      localStorage.setItem("currentUser", JSON.stringify({ email: user.email, name: user.name }));
+      localStorage.setItem("currentUser", JSON.stringify({ 
+        email: user.email, 
+        name: user.name,
+        userType: user.userType
+      }));
       
       toast({
         title: "Login bem-sucedido",
