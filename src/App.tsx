@@ -8,6 +8,9 @@ import Layout from "./components/Layout";
 import AdminLayout from "./components/AdminLayout";
 import Home from "./pages/Index";
 import Events from "./pages/Events";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="eventos" element={<Events />} />
+            <Route path="login" element={<Login />} />
+            <Route path="registro" element={<Register />} />
+            <Route path="perfil" element={<Profile />} />
           </Route>
           
           {/* Rotas de administração */}
