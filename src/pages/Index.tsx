@@ -4,47 +4,7 @@ import { Link } from "react-router-dom";
 import { Search, MapPin, Calendar, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import EventCard, { EventProps } from "@/components/EventCard";
 import Logo from "@/components/Logo";
-
-const featuredEvents: EventProps[] = [
-  {
-    id: "1",
-    title: "Conferência de Tecnologia 2025",
-    description: "Participe da maior conferência de tecnologia do ano com especialistas do setor e oportunidades de networking.",
-    location: "Centro de Convenções São Paulo",
-    date: "2025-06-15",
-    time: "9:00 - 17:00",
-    capacity: 500,
-    attendees: 320,
-    category: "Technology",
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    id: "2",
-    title: "Festival de Música de Fim de Semana",
-    description: "Dois dias de incríveis performances musicais ao vivo de artistas locais e internacionais.",
-    location: "Parque da Praia, Rio",
-    date: "2025-07-10",
-    time: "16:00 - 23:00",
-    capacity: 2000,
-    attendees: 1950,
-    category: "Music",
-    image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    id: "3",
-    title: "Exposição de Arte: Perspectivas Modernas",
-    description: "Explore peças de arte contemporânea de artistas emergentes de todo o Brasil.",
-    location: "MASP, Av. Paulista",
-    date: "2025-05-20",
-    time: "10:00 - 20:00",
-    capacity: 300,
-    attendees: 120,
-    category: "Art",
-    image: "https://images.unsplash.com/photo-1531243420551-511623338314?q=80&w=2070&auto=format&fit=crop"
-  }
-];
 
 const categoryIcons = [
   { name: "Música", icon: "🎵" },
@@ -80,7 +40,7 @@ const Home = () => {
               
               <div className="flex flex-wrap gap-3">
                 <Button asChild>
-                  <Link to="/events">Ver Todos os Eventos</Link>
+                  <Link to="/eventos">Ver Todos os Eventos</Link>
                 </Button>
                 <Button variant="outline" asChild>
                   <Link to="/create-event">Criar Evento</Link>
@@ -113,24 +73,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Events Section */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold">Eventos em Destaque</h2>
-            <Link to="/events" className="flex items-center gap-1 text-findme-accent hover:underline">
-              Ver todos <ArrowRight size={16} />
-            </Link>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Categories Section */}
       <section className="py-12 md:py-16 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -138,7 +80,7 @@ const Home = () => {
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {categoryIcons.map((category) => (
-              <Link to={`/events?category=${category.name}`} key={category.name}>
+              <Link to={`/eventos?category=${category.name}`} key={category.name}>
                 <div className="bg-background hover:shadow-md border rounded-lg p-4 text-center transition-all hover:-translate-y-1">
                   <span className="text-4xl mb-2 block">{category.icon}</span>
                   <h3 className="font-medium">{category.name}</h3>
@@ -193,7 +135,7 @@ const Home = () => {
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Button size="lg" variant="secondary" asChild>
-                <Link to="/events">Encontrar Eventos</Link>
+                <Link to="/eventos">Encontrar Eventos</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/register">Criar Conta</Link>

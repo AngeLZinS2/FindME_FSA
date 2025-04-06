@@ -12,7 +12,7 @@ const Navbar = () => {
 
   const navigation = [
     { name: "Início", path: "/" },
-    { name: "Eventos", path: "/events" },
+    { name: "Eventos", path: "/eventos" },
   ];
 
   const isActive = (path: string) => {

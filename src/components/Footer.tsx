@@ -39,7 +39,7 @@ const Footer = () => {
             <h3 className="font-semibold text-sm tracking-wider uppercase mb-4">Para Usuários</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/events" className="text-muted-foreground hover:text-primary text-sm">
+                <Link to="/eventos" className="text-muted-foreground hover:text-primary text-sm">
                   Explorar Eventos
                 </Link>
               </li>

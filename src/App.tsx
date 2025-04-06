@@ -25,7 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
-            <Route path="events" element={<Events />} />
+            <Route path="eventos" element={<Events />} />
           </Route>
           
           {/* Rotas de administração */}
