@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
-// Esquema de validação para o formulário de evento
 const eventSchema = z.object({
   title: z.string().min(5, "O título deve ter pelo menos 5 caracteres"),
   description: z.string().min(20, "A descrição deve ter pelo menos 20 caracteres"),
@@ -60,24 +59,17 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
   });
 
   const onSubmit = (data: EventFormValues) => {
-    // Simular uma criação de evento bem-sucedida
     console.log("Dados do novo evento:", data);
     
-    // Adicionar evento aos eventos do usuário no localStorage
     const currentUser = localStorage.getItem("currentUser");
     if (currentUser) {
       const user = JSON.parse(currentUser);
       
-      // Obter eventos existentes ou inicializar array vazio
       const userEvents = JSON.parse(localStorage.getItem("userEvents") || "[]");
-      
-      // Obter eventos para análise do admin ou inicializar array vazio
       const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
       
-      // Formatar data combinando date e time
       const eventDate = new Date(`${data.date}T${data.time}`);
       
-      // Adicionar o novo evento com ID único
       const newEvent = {
         id: Date.now(),
         titulo: data.title,
@@ -89,21 +81,18 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
         preco: data.price ? parseFloat(data.price) : 0,
         organizador: user.name,
         organizadorId: user.email,
-        status: "pendente", // Agora o evento começa como pendente para aprovação
+        status: "pendente",
         attendees: [],
       };
       
-      // Adicionar ao array de eventos do usuário
       userEvents.push({
         ...newEvent,
-        date: data.date,  // Manter o formato original para compatibilidade
-        time: data.time,  // Manter o formato original para compatibilidade
+        date: data.date,
+        time: data.time,
       });
       
-      // Adicionar ao array de eventos para aprovação do admin
       adminEvents.push(newEvent);
       
-      // Salvar ambos arrays no localStorage
       localStorage.setItem("userEvents", JSON.stringify(userEvents));
       localStorage.setItem("adminEvents", JSON.stringify(adminEvents));
       
@@ -112,7 +101,6 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
         description: `O evento "${data.title}" foi cadastrado e está aguardando aprovação do administrador.`,
       });
       
-      // Limpar formulário
       form.reset();
       
       if (onSuccess) onSuccess(data);
@@ -211,11 +199,12 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="social">Social</SelectItem>
-                  <SelectItem value="educacional">Educacional</SelectItem>
-                  <SelectItem value="corporativo">Corporativo</SelectItem>
-                  <SelectItem value="cultural">Cultural</SelectItem>
-                  <SelectItem value="esportivo">Esportivo</SelectItem>
+                  <SelectItem value="Tecnologia">Tecnologia</SelectItem>
+                  <SelectItem value="Música">Música</SelectItem>
+                  <SelectItem value="Arte">Arte</SelectItem>
+                  <SelectItem value="Networking">Networking</SelectItem>
+                  <SelectItem value="Gastronomia">Gastronomia</SelectItem>
+                  <SelectItem value="Esportes">Esportes</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

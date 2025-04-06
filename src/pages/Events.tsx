@@ -1,13 +1,9 @@
-
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import EventCard, { EventProps } from "@/components/EventCard";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -28,32 +24,25 @@ const EventsPage = () => {
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const [sortOrder, setSortOrder] = useState("date-asc");
   
-  // Get events list and filtering functionality
   const { events: eventsList } = useEventsList();
   
-  // Filter events based on search, category, and other filters
   const filteredEvents = eventsList.filter((event) => {
-    // Filter by search term
     const matchesSearch = 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.location.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filter by category
     const matchesCategory = selectedCategory === "Todos" || event.category === selectedCategory;
     
-    // Filter by capacity
     const matchesCapacity = 
       event.capacity >= capacityRange[0] && event.capacity <= capacityRange[1];
     
-    // Filter by availability
     const matchesAvailability = 
       !showOnlyAvailable || event.attendees < event.capacity;
     
     return matchesSearch && matchesCategory && matchesCapacity && matchesAvailability;
   });
 
-  // Sort events
   const sortedEvents = [...filteredEvents].sort((a, b) => {
     switch(sortOrder) {
       case "date-asc":
@@ -69,7 +58,6 @@ const EventsPage = () => {
     }
   });
 
-  // Pagination
   const totalPages = Math.ceil(sortedEvents.length / ITEMS_PER_PAGE);
   const paginatedEvents = sortedEvents.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -84,7 +72,7 @@ const EventsPage = () => {
     } else {
       newParams.delete("category");
     }
-    newParams.set("page", "1"); // Reset to first page on filter change
+    newParams.set("page", "1");
     setSearchParams(newParams);
   };
 
@@ -111,7 +99,6 @@ const EventsPage = () => {
       <div className="container mx-auto px-4">
         <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
         
-        {/* Search and filters */}
         <div className="flex flex-col md:flex-row gap-4 bg-accent/50 p-4 rounded-lg mb-6">
           <div className="relative flex-grow">
             <Input
@@ -146,7 +133,6 @@ const EventsPage = () => {
           </div>
         </div>
         
-        {/* Extended filters */}
         {showFilters && (
           <EventFilters 
             capacityRange={capacityRange}
@@ -158,7 +144,6 @@ const EventsPage = () => {
           />
         )}
         
-        {/* Active filters */}
         {(selectedCategory !== "Todos" || showOnlyAvailable || 
           capacityRange[0] > 0 || capacityRange[1] < 2000 || searchTerm) && (
           <div className="mt-4 mb-6 flex flex-wrap gap-2 items-center">
@@ -210,7 +195,6 @@ const EventsPage = () => {
           </div>
         )}
         
-        {/* Events list */}
         {paginatedEvents.length > 0 ? (
           <>
             <div className="mb-6 flex justify-between items-center">
@@ -236,7 +220,6 @@ const EventsPage = () => {
               ))}
             </div>
             
-            {/* Pagination */}
             <Pagination className="mt-8">
               <PaginationContent>
                 <PaginationItem>
