@@ -18,7 +18,7 @@ const ITEMS_PER_PAGE = 6;
 
 const EventsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialCategory = searchParams.get("category") || "All";
+  const initialCategory = searchParams.get("category") || "Todos";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,7 +40,7 @@ const EventsPage = () => {
       event.location.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filter by category
-    const matchesCategory = selectedCategory === "All" || event.category === selectedCategory;
+    const matchesCategory = selectedCategory === "Todos" || event.category === selectedCategory;
     
     // Filter by capacity
     const matchesCapacity = 
@@ -79,7 +79,7 @@ const EventsPage = () => {
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
     const newParams = new URLSearchParams(searchParams);
-    if (value !== "All") {
+    if (value !== "Todos") {
       newParams.set("category", value);
     } else {
       newParams.delete("category");
@@ -102,20 +102,20 @@ const EventsPage = () => {
     setCapacityRange([0, 2000]);
     setShowOnlyAvailable(false);
     setSearchTerm("");
-    setSelectedCategory("All");
+    setSelectedCategory("Todos");
     setSearchParams({ page: "1" });
   };
 
   return (
     <div className="py-12">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl md:text-4xl font-bold mb-6">Discover Events</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
         
         {/* Search and filters */}
         <div className="flex flex-col md:flex-row gap-4 bg-accent/50 p-4 rounded-lg mb-6">
           <div className="relative flex-grow">
             <Input
-              placeholder="Search for events..."
+              placeholder="Buscar eventos..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -126,10 +126,10 @@ const EventsPage = () => {
           <div className="flex gap-3">
             <Select value={selectedCategory} onValueChange={handleCategoryChange}>
               <SelectTrigger className="min-w-[150px]">
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                {["All", "Technology", "Music", "Art", "Networking", "Food", "Sports"].map((category) => (
+                {["Todos", "Tecnologia", "Música", "Arte", "Networking", "Gastronomia", "Esportes"].map((category) => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
               </SelectContent>
@@ -141,7 +141,7 @@ const EventsPage = () => {
               onClick={() => setShowFilters(!showFilters)}
             >
               <Filter size={16} />
-              <span className="md:inline hidden">Filters</span>
+              <span className="md:inline hidden">Filtros</span>
             </Button>
           </div>
         </div>
@@ -159,25 +159,25 @@ const EventsPage = () => {
         )}
         
         {/* Active filters */}
-        {(selectedCategory !== "All" || showOnlyAvailable || 
+        {(selectedCategory !== "Todos" || showOnlyAvailable || 
           capacityRange[0] > 0 || capacityRange[1] < 2000 || searchTerm) && (
           <div className="mt-4 mb-6 flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-muted-foreground">Active filters:</span>
+            <span className="text-sm text-muted-foreground">Filtros ativos:</span>
             
-            {selectedCategory !== "All" && (
+            {selectedCategory !== "Todos" && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                Category: {selectedCategory}
+                Categoria: {selectedCategory}
                 <X 
                   size={14} 
                   className="cursor-pointer" 
-                  onClick={() => handleCategoryChange("All")}
+                  onClick={() => handleCategoryChange("Todos")}
                 />
               </Badge>
             )}
             
             {showOnlyAvailable && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                Available Only
+                Somente Disponíveis
                 <X 
                   size={14} 
                   className="cursor-pointer" 
@@ -188,7 +188,7 @@ const EventsPage = () => {
             
             {(capacityRange[0] > 0 || capacityRange[1] < 2000) && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                Capacity: {capacityRange[0]}-{capacityRange[1]}
+                Capacidade: {capacityRange[0]}-{capacityRange[1]}
                 <X 
                   size={14} 
                   className="cursor-pointer" 
@@ -215,17 +215,17 @@ const EventsPage = () => {
           <>
             <div className="mb-6 flex justify-between items-center">
               <p className="text-muted-foreground">
-                Showing {Math.min(ITEMS_PER_PAGE, paginatedEvents.length)} of {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"}
+                Mostrando {Math.min(ITEMS_PER_PAGE, paginatedEvents.length)} de {filteredEvents.length} {filteredEvents.length === 1 ? "evento" : "eventos"}
               </p>
               <Select defaultValue={sortOrder} onValueChange={handleSortChange}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="date-asc">Date (Earliest first)</SelectItem>
-                  <SelectItem value="date-desc">Date (Latest first)</SelectItem>
-                  <SelectItem value="capacity-asc">Capacity (Low to High)</SelectItem>
-                  <SelectItem value="capacity-desc">Capacity (High to Low)</SelectItem>
+                  <SelectItem value="date-asc">Data (Mais próximos)</SelectItem>
+                  <SelectItem value="date-desc">Data (Mais distantes)</SelectItem>
+                  <SelectItem value="capacity-asc">Capacidade (Menor para Maior)</SelectItem>
+                  <SelectItem value="capacity-desc">Capacidade (Maior para Menor)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -282,12 +282,12 @@ const EventsPage = () => {
           </>
         ) : (
           <div className="text-center py-12">
-            <h3 className="text-2xl font-semibold mb-2">No events found</h3>
+            <h3 className="text-2xl font-semibold mb-2">Nenhum evento encontrado</h3>
             <p className="text-muted-foreground mb-6">
-              Try adjusting your search or filters to find events.
+              Tente ajustar sua busca ou filtros para encontrar eventos.
             </p>
             <Button onClick={resetFilters}>
-              Reset All Filters
+              Limpar Todos os Filtros
             </Button>
           </div>
         )}

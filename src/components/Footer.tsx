@@ -13,7 +13,7 @@ const Footer = () => {
           <div className="space-y-4">
             <Logo />
             <p className="text-muted-foreground text-sm">
-              Discover and join local events or create your own with FindMe – connecting people through experiences.
+              Descubra e participe de eventos locais ou crie seus próprios com o FindMe – conectando pessoas através de experiências.
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
@@ -36,63 +36,63 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm tracking-wider uppercase mb-4">For Users</h3>
+            <h3 className="font-semibold text-sm tracking-wider uppercase mb-4">Para Usuários</h3>
             <ul className="space-y-2">
               <li>
                 <Link to="/events" className="text-muted-foreground hover:text-primary text-sm">
-                  Explore Events
+                  Explorar Eventos
                 </Link>
               </li>
               <li>
                 <Link to="/login" className="text-muted-foreground hover:text-primary text-sm">
-                  Sign In
+                  Entrar
                 </Link>
               </li>
               <li>
                 <Link to="/register" className="text-muted-foreground hover:text-primary text-sm">
-                  Create Account
+                  Criar Conta
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm tracking-wider uppercase mb-4">For Organizers</h3>
+            <h3 className="font-semibold text-sm tracking-wider uppercase mb-4">Para Organizadores</h3>
             <ul className="space-y-2">
               <li>
                 <Link to="/create-event" className="text-muted-foreground hover:text-primary text-sm">
-                  Create Event
+                  Criar Evento
                 </Link>
               </li>
               <li>
                 <Link to="/dashboard" className="text-muted-foreground hover:text-primary text-sm">
-                  Dashboard
+                  Painel de Controle
                 </Link>
               </li>
               <li>
                 <Link to="/resources" className="text-muted-foreground hover:text-primary text-sm">
-                  Resources
+                  Recursos
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm tracking-wider uppercase mb-4">Support</h3>
+            <h3 className="font-semibold text-sm tracking-wider uppercase mb-4">Suporte</h3>
             <ul className="space-y-2">
               <li>
                 <Link to="/faq" className="text-muted-foreground hover:text-primary text-sm">
-                  FAQs
+                  Perguntas Frequentes
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="text-muted-foreground hover:text-primary text-sm">
-                  Contact Us
+                  Fale Conosco
                 </Link>
               </li>
               <li>
                 <Link to="/privacy" className="text-muted-foreground hover:text-primary text-sm">
-                  Privacy Policy
+                  Política de Privacidade
                 </Link>
               </li>
             </ul>
@@ -101,17 +101,17 @@ const Footer = () => {
         <Separator className="my-6" />
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} FindMe. All rights reserved.
+            &copy; {new Date().getFullYear()} FindMe. Todos os direitos reservados.
           </p>
           <div className="flex gap-4 mt-4 md:mt-0">
             <Link to="/terms" className="text-xs text-muted-foreground hover:text-primary">
-              Terms of Service
+              Termos de Serviço
             </Link>
             <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary">
-              Privacy Policy
+              Política de Privacidade
             </Link>
             <Link to="/cookies" className="text-xs text-muted-foreground hover:text-primary">
-              Cookie Policy
+              Política de Cookies
             </Link>
           </div>
         </div>

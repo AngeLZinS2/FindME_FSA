@@ -14,14 +14,14 @@ const NotFound = () => {
       <main className="flex-grow flex items-center justify-center">
         <div className="text-center px-4 py-16">
           <h1 className="text-8xl font-bold mb-4">404</h1>
-          <h2 className="text-2xl font-semibold mb-6">Page Not Found</h2>
+          <h2 className="text-2xl font-semibold mb-6">Página Não Encontrada</h2>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
-            Sorry, we couldn't find the page you're looking for. The page might have been removed or the URL might be incorrect.
+            Desculpe, não conseguimos encontrar a página que você está procurando. A página pode ter sido removida ou a URL pode estar incorreta.
           </p>
           <Button asChild>
             <Link to="/" className="flex items-center gap-2">
               <Home size={18} />
-              Back to Home
+              Voltar para o Início
             </Link>
           </Button>
         </div>

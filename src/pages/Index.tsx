@@ -12,11 +12,11 @@ import Logo from "@/components/Logo";
 const featuredEvents: EventProps[] = [
   {
     id: "1",
-    title: "Tech Conference 2025",
-    description: "Join us for the biggest tech conference of the year featuring industry experts and networking opportunities.",
-    location: "São Paulo Convention Center",
+    title: "Conferência de Tecnologia 2025",
+    description: "Participe da maior conferência de tecnologia do ano com especialistas do setor e oportunidades de networking.",
+    location: "Centro de Convenções São Paulo",
     date: "2025-06-15",
-    time: "9:00 AM - 5:00 PM",
+    time: "9:00 - 17:00",
     capacity: 500,
     attendees: 320,
     category: "Technology",
@@ -24,11 +24,11 @@ const featuredEvents: EventProps[] = [
   },
   {
     id: "2",
-    title: "Weekend Music Festival",
-    description: "Two days of amazing live music performances from local and international artists.",
-    location: "Rio Beach Park",
+    title: "Festival de Música de Fim de Semana",
+    description: "Dois dias de incríveis performances musicais ao vivo de artistas locais e internacionais.",
+    location: "Parque da Praia, Rio",
     date: "2025-07-10",
-    time: "4:00 PM - 11:00 PM",
+    time: "16:00 - 23:00",
     capacity: 2000,
     attendees: 1950,
     category: "Music",
@@ -36,11 +36,11 @@ const featuredEvents: EventProps[] = [
   },
   {
     id: "3",
-    title: "Art Exhibition: Modern Perspectives",
-    description: "Explore contemporary art pieces from emerging artists across Brazil.",
+    title: "Exposição de Arte: Perspectivas Modernas",
+    description: "Explore peças de arte contemporânea de artistas emergentes de todo o Brasil.",
     location: "MASP, Av. Paulista",
     date: "2025-05-20",
-    time: "10:00 AM - 8:00 PM",
+    time: "10:00 - 20:00",
     capacity: 300,
     attendees: 120,
     category: "Art",
@@ -49,11 +49,11 @@ const featuredEvents: EventProps[] = [
 ];
 
 const categoryIcons = [
-  { name: "Music", icon: "🎵" },
-  { name: "Sports", icon: "⚽" },
-  { name: "Technology", icon: "💻" },
-  { name: "Food", icon: "🍲" },
-  { name: "Art", icon: "🎨" },
+  { name: "Música", icon: "🎵" },
+  { name: "Esportes", icon: "⚽" },
+  { name: "Tecnologia", icon: "💻" },
+  { name: "Gastronomia", icon: "🍲" },
+  { name: "Arte", icon: "🎨" },
   { name: "Networking", icon: "🤝" },
 ];
 
@@ -68,15 +68,15 @@ const Home = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6 animate-fade-in">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Discover <span className="text-findme-accent">Local Events</span> Near You
+                Descubra <span className="text-findme-accent">Eventos Locais</span> Perto de Você
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground">
-                Join events, create memorable experiences, and build connections with FindMe.
+                Participe de eventos, crie experiências memoráveis e construa conexões com o FindMe.
               </p>
               
               <div className="relative max-w-md">
                 <Input 
-                  placeholder="Search for events..." 
+                  placeholder="Buscar eventos..." 
                   className="pl-10 pr-4 py-6 text-base" 
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
@@ -84,10 +84,10 @@ const Home = () => {
               
               <div className="flex flex-wrap gap-3">
                 <Button asChild>
-                  <Link to="/events">Browse All Events</Link>
+                  <Link to="/events">Ver Todos os Eventos</Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link to="/create-event">Create Event</Link>
+                  <Link to="/create-event">Criar Evento</Link>
                 </Button>
               </div>
             </div>
@@ -98,17 +98,17 @@ const Home = () => {
                 <div className="rounded-lg overflow-hidden relative z-10">
                   <img 
                     src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop" 
-                    alt="Events" 
+                    alt="Eventos" 
                     className="w-full aspect-[3/4] object-cover"
                   />
                 </div>
                 <div className="absolute -bottom-6 -right-6 bg-background p-3 rounded-lg shadow-lg z-20 max-w-[200px]">
                   <div className="flex items-center gap-2 font-medium">
                     <MapPin size={14} className="text-findme-accent" />
-                    <span className="text-sm">Trending Events Near You</span>
+                    <span className="text-sm">Eventos em Alta Perto de Você</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Over 250+ events happening this month
+                    Mais de 250+ eventos acontecendo este mês
                   </p>
                 </div>
               </div>
@@ -121,9 +121,9 @@ const Home = () => {
       <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold">Featured Events</h2>
+            <h2 className="text-2xl md:text-3xl font-bold">Eventos em Destaque</h2>
             <Link to="/events" className="flex items-center gap-1 text-findme-accent hover:underline">
-              View all <ArrowRight size={16} />
+              Ver todos <ArrowRight size={16} />
             </Link>
           </div>
           
@@ -138,7 +138,7 @@ const Home = () => {
       {/* Categories Section */}
       <section className="py-12 md:py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Explore by Category</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Explorar por Categoria</h2>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {categoryIcons.map((category) => (
@@ -156,31 +156,31 @@ const Home = () => {
       {/* How it works */}
       <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">How FindMe Works</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Como o FindMe Funciona</h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
               <div className="bg-accent/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Discover Events</h3>
-              <p className="text-muted-foreground">Browse through local events happening near you based on your interests.</p>
+              <h3 className="text-xl font-semibold mb-2">Descubra Eventos</h3>
+              <p className="text-muted-foreground">Navegue por eventos locais próximos de você com base em seus interesses.</p>
             </div>
             
             <div className="text-center p-6">
               <div className="bg-accent/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Join or Create</h3>
-              <p className="text-muted-foreground">Register for events that interest you or create your own unique event.</p>
+              <h3 className="text-xl font-semibold mb-2">Participe ou Crie</h3>
+              <p className="text-muted-foreground">Registre-se em eventos do seu interesse ou crie seu próprio evento único.</p>
             </div>
             
             <div className="text-center p-6">
               <div className="bg-accent/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Connect</h3>
-              <p className="text-muted-foreground">Meet new people, build your network, and create memorable experiences.</p>
+              <h3 className="text-xl font-semibold mb-2">Conecte-se</h3>
+              <p className="text-muted-foreground">Conheça novas pessoas, amplie sua rede e crie experiências memoráveis.</p>
             </div>
           </div>
         </div>
@@ -191,16 +191,16 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
             <Logo size="lg" />
-            <h2 className="text-3xl md:text-4xl font-bold my-6">Ready to discover your next event?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold my-6">Pronto para descobrir seu próximo evento?</h2>
             <p className="text-lg mb-8">
-              Join thousands of people finding and creating amazing events every day.
+              Junte-se a milhares de pessoas encontrando e criando eventos incríveis todos os dias.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Button size="lg" variant="secondary" asChild>
-                <Link to="/events">Find Events</Link>
+                <Link to="/events">Encontrar Eventos</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/register">Create Account</Link>
+                <Link to="/register">Criar Conta</Link>
               </Button>
             </div>
           </div>

@@ -11,8 +11,8 @@ const Navbar = () => {
   const location = useLocation();
 
   const navigation = [
-    { name: "Home", path: "/" },
-    { name: "Events", path: "/events" },
+    { name: "Início", path: "/" },
+    { name: "Eventos", path: "/events" },
   ];
 
   const isActive = (path: string) => {
@@ -44,11 +44,11 @@ const Navbar = () => {
           <Link to="/login">
             <Button variant="outline" className="flex items-center gap-2">
               <User size={16} />
-              Sign in
+              Entrar
             </Button>
           </Link>
           <Link to="/register">
-            <Button>Register</Button>
+            <Button>Cadastrar</Button>
           </Link>
         </div>
 
@@ -88,11 +88,11 @@ const Navbar = () => {
               <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                 <Button variant="outline" className="w-full flex items-center justify-center gap-2">
                   <User size={16} />
-                  Sign in
+                  Entrar
                 </Button>
               </Link>
               <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full">Register</Button>
+                <Button className="w-full">Cadastrar</Button>
               </Link>
             </div>
           </div>
