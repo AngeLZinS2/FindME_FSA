@@ -5,8 +5,6 @@ import { Search, MapPin, Calendar, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import EventCard, { EventProps } from "@/components/EventCard";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
 
 const featuredEvents: EventProps[] = [
@@ -59,9 +57,7 @@ const categoryIcons = [
 
 const Home = () => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      
+    <div>
       {/* Hero Section */}
       <section className="bg-accent/50 py-16 md:py-24">
         <div className="container mx-auto px-4">
@@ -206,8 +202,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };
