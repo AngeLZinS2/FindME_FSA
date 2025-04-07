@@ -87,6 +87,9 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
       // Get image from upload or use placeholder based on category
       const eventImage = data.image || getCategoryPlaceholderImage(data.category);
       
+      // Ensure social media data is properly typed
+      const socialMedia: SocialMediaLink[] = data.socialMedia || [];
+      
       const newEvent = {
         id: Date.now(),
         titulo: data.title,
@@ -101,7 +104,7 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
         status: "pendente",
         attendees: [],
         image: eventImage,
-        socialMedia: data.socialMedia || [],
+        socialMedia,
       };
       
       userEvents.push({
