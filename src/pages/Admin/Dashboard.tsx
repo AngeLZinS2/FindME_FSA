@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { 
   CalendarCheck, 
   Users, 
@@ -8,18 +8,73 @@ import {
 } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+
+interface ActivityLog {
+  id: number;
+  action: string;
+  user: string;
+  target: string;
+  date: string;
+}
 
 const AdminDashboard = () => {
-  // Dados mockados para o dashboard
-  const dashboardData = {
-    totalEvents: 128,
-    pendingEvents: 12,
-    totalUsers: 543,
-    recentActionLogs: [
-      { id: 1, action: "Evento aprovado", user: "Admin", target: "Festival de Música", date: "12/04/2025" },
-      { id: 2, action: "Usuário criado", user: "Admin", target: "Administrador Regional", date: "10/04/2025" },
-      { id: 3, action: "Evento rejeitado", user: "Admin", target: "Reunião Suspeita", date: "08/04/2025" },
-    ]
+  // Estado para armazenar os dados do dashboard
+  const [dashboardData, setDashboardData] = useState({
+    totalEvents: 0,
+    pendingEvents: 0,
+    totalUsers: 0,
+    recentActionLogs: [] as ActivityLog[]
+  });
+  
+  const { toast } = useToast();
+
+  // Buscar dados ao carregar o componente
+  useEffect(() => {
+    try {
+      // Buscar eventos do localStorage
+      const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const activityLogs = JSON.parse(localStorage.getItem("activityLogs") || "[]");
+      
+      // Calcular estatísticas
+      const pendingEvents = adminEvents.filter((event: any) => event.status === "pendente").length;
+      
+      // Atualizar o estado com os dados calculados
+      setDashboardData({
+        totalEvents: adminEvents.length,
+        pendingEvents: pendingEvents,
+        totalUsers: users.length,
+        recentActionLogs: activityLogs.slice(0, 10) // Pegar os 10 logs mais recentes
+      });
+      
+      // Se não houver logs de atividade, criar alguns logs iniciais
+      if (activityLogs.length === 0) {
+        const initialLogs = [
+          { id: 1, action: "Evento aprovado", user: "Admin", target: "Festival de Música", date: "12/04/2025" },
+          { id: 2, action: "Usuário criado", user: "Admin", target: "Administrador Regional", date: "10/04/2025" },
+          { id: 3, action: "Evento rejeitado", user: "Admin", target: "Reunião Suspeita", date: "08/04/2025" }
+        ];
+        
+        localStorage.setItem("activityLogs", JSON.stringify(initialLogs));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados do dashboard:", error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os dados do dashboard.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
+  // Função para formatar a data
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString; // Se não puder ser convertido, retorna a string original
+    }
+    return date.toLocaleDateString('pt-BR');
   };
 
   return (
@@ -94,28 +149,34 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Ação</th>
-                    <th className="text-left py-3 px-4">Administrador</th>
-                    <th className="text-left py-3 px-4">Alvo</th>
-                    <th className="text-left py-3 px-4">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboardData.recentActionLogs.map((log) => (
-                    <tr key={log.id} className="border-b">
-                      <td className="py-3 px-4">{log.action}</td>
-                      <td className="py-3 px-4">{log.user}</td>
-                      <td className="py-3 px-4">{log.target}</td>
-                      <td className="py-3 px-4">{log.date}</td>
+            {dashboardData.recentActionLogs.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4">Ação</th>
+                      <th className="text-left py-3 px-4">Administrador</th>
+                      <th className="text-left py-3 px-4">Alvo</th>
+                      <th className="text-left py-3 px-4">Data</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {dashboardData.recentActionLogs.map((log) => (
+                      <tr key={log.id} className="border-b">
+                        <td className="py-3 px-4">{log.action}</td>
+                        <td className="py-3 px-4">{log.user}</td>
+                        <td className="py-3 px-4">{log.target}</td>
+                        <td className="py-3 px-4">{formatDate(log.date)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Nenhum log de atividade encontrado</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
