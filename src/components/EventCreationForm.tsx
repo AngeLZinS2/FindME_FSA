@@ -29,9 +29,9 @@ import SocialMediaInputs, { SocialMediaLink } from "@/components/SocialMediaInpu
 import { getCategoryPlaceholderImage } from "@/lib/imageUtils";
 
 const socialMediaSchema = z.object({
+  id: z.string(),
   platform: z.string(),
-  url: z.string().url("URL inválida"),
-  id: z.string()
+  url: z.string().url("URL inválida")
 });
 
 const eventSchema = z.object({

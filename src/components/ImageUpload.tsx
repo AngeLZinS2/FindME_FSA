@@ -10,7 +10,7 @@ import {
   ACCEPTED_IMAGE_EXTENSIONS, 
   isValidFileSize, 
   isValidFileType 
-} from "@/lib/utils/imageUtils";
+} from "@/lib/imageUtils";
 
 interface ImageUploadProps {
   onChange: (value: string | null) => void;
