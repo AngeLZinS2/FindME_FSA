@@ -1,4 +1,3 @@
-
 import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -87,8 +86,12 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
       // Get image from upload or use placeholder based on category
       const eventImage = data.image || getCategoryPlaceholderImage(data.category);
       
-      // Ensure social media data is properly typed
-      const socialMedia: SocialMediaLink[] = data.socialMedia || [];
+      // Ensure social media data is properly typed with all required fields
+      const socialMedia: SocialMediaLink[] = (data.socialMedia || []).map(item => ({
+        id: item.id,
+        platform: item.platform,
+        url: item.url
+      }));
       
       const newEvent = {
         id: Date.now(),
@@ -252,13 +255,22 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
           <FormField
             control={form.control}
             name="socialMedia"
-            render={({ field }) => (
-              <SocialMediaInputs
-                value={field.value || []}
-                onChange={field.onChange}
-                label="Redes Sociais"
-              />
-            )}
+            render={({ field }) => {
+              // Ensure the value is properly typed for SocialMediaInputs
+              const typedValue: SocialMediaLink[] = (field.value || []).map(item => ({
+                id: item.id || `social-${Date.now()}-${Math.random()}`,
+                platform: item.platform || '',
+                url: item.url || ''
+              }));
+              
+              return (
+                <SocialMediaInputs
+                  value={typedValue}
+                  onChange={field.onChange}
+                  label="Redes Sociais"
+                />
+              );
+            }}
           />
             
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
