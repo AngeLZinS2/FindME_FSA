@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import SocialMediaLinks from "./SocialMediaLinks";
+import { SocialMediaLink } from "./SocialMediaInputs";
 
 export interface EventProps {
   id: string;
@@ -17,6 +19,7 @@ export interface EventProps {
   attendees: number;
   category: string;
   image?: string;
+  socialMedia?: SocialMediaLink[];
 }
 
 const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
@@ -31,6 +34,7 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
     attendees,
     category,
     image,
+    socialMedia = [],
   } = event;
 
   const capacityPercentage = (attendees / capacity) * 100;
@@ -91,6 +95,12 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
             </span>
           </div>
         </div>
+        
+        {socialMedia && socialMedia.length > 0 && (
+          <div className="mt-3">
+            <SocialMediaLinks links={socialMedia} />
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="pt-2">

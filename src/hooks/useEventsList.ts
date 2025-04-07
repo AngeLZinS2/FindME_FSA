@@ -177,7 +177,8 @@ const convertUserEventToEventProps = (userEvent: any): EventProps => {
     capacity: parseInt(userEvent.capacidade || userEvent.capacity, 10),
     attendees: Array.isArray(userEvent.attendees) ? userEvent.attendees.length : 0,
     category: mapCategoryToStandard(userEvent.categoria || userEvent.category),
-    image: userEvent.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop"
+    image: userEvent.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
+    socialMedia: userEvent.socialMedia || [],
   };
 };
 

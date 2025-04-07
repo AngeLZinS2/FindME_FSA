@@ -1,3 +1,4 @@
+
 import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -23,6 +24,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import ImageUpload from "@/components/ImageUpload";
+import SocialMediaInputs, { SocialMediaLink } from "@/components/SocialMediaInputs";
+import { getCategoryPlaceholderImage } from "@/lib/imageUtils";
+
+const socialMediaSchema = z.object({
+  platform: z.string(),
+  url: z.string().url("URL inválida"),
+  id: z.string()
+});
 
 const eventSchema = z.object({
   title: z.string().min(5, "O título deve ter pelo menos 5 caracteres"),
@@ -33,6 +43,8 @@ const eventSchema = z.object({
   category: z.string().min(1, "Escolha uma categoria"),
   capacity: z.string().min(1, "Informe a capacidade do evento"),
   price: z.string().optional(),
+  image: z.string().nullable().optional(),
+  socialMedia: z.array(socialMediaSchema).optional(),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -55,6 +67,8 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
       category: "",
       capacity: "",
       price: "",
+      image: null,
+      socialMedia: [],
     },
   });
 
@@ -70,6 +84,9 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
       
       const eventDate = new Date(`${data.date}T${data.time}`);
       
+      // Get image from upload or use placeholder based on category
+      const eventImage = data.image || getCategoryPlaceholderImage(data.category);
+      
       const newEvent = {
         id: Date.now(),
         titulo: data.title,
@@ -83,6 +100,8 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
         organizadorId: user.email,
         status: "pendente",
         attendees: [],
+        image: eventImage,
+        socialMedia: data.socialMedia || [],
       };
       
       userEvents.push({
@@ -107,50 +126,20 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
     }
   };
 
+  const categoryValue = form.watch("category");
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Título do Evento</FormLabel>
-              <FormControl>
-                <Input placeholder="Digite o título do evento" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-          
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Descreva os detalhes do seu evento" 
-                  className="min-h-[120px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-          
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-4">
           <FormField
             control={form.control}
-            name="date"
+            name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Data</FormLabel>
+                <FormLabel>Título do Evento</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input placeholder="Digite o título do evento" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -159,86 +148,14 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
             
           <FormField
             control={form.control}
-            name="time"
+            name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Horário</FormLabel>
+                <FormLabel>Descrição</FormLabel>
                 <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-          
-        <FormField
-          control={form.control}
-          name="location"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Local</FormLabel>
-              <FormControl>
-                <Input placeholder="Endereço do evento" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-          
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Categoria</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Tecnologia">Tecnologia</SelectItem>
-                  <SelectItem value="Música">Música</SelectItem>
-                  <SelectItem value="Arte">Arte</SelectItem>
-                  <SelectItem value="Networking">Networking</SelectItem>
-                  <SelectItem value="Gastronomia">Gastronomia</SelectItem>
-                  <SelectItem value="Esportes">Esportes</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-          
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="capacity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Capacidade</FormLabel>
-                <FormControl>
-                  <Input type="number" min="1" placeholder="Número de participantes" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-            
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Preço (opcional)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    step="0.01"
-                    placeholder="Deixe em branco se for gratuito" 
+                  <Textarea 
+                    placeholder="Descreva os detalhes do seu evento" 
+                    className="min-h-[120px]"
                     {...field} 
                   />
                 </FormControl>
@@ -246,6 +163,136 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
               </FormItem>
             )}
           />
+          
+          <FormField
+            control={form.control}
+            name="image"
+            render={({ field }) => (
+              <ImageUpload
+                onChange={field.onChange}
+                value={field.value}
+                label="Imagem de Capa"
+              />
+            )}
+          />
+            
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+              
+            <FormField
+              control={form.control}
+              name="time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Horário</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+            
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Local</FormLabel>
+                <FormControl>
+                  <Input placeholder="Endereço do evento" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+            
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoria</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Tecnologia">Tecnologia</SelectItem>
+                    <SelectItem value="Música">Música</SelectItem>
+                    <SelectItem value="Arte">Arte</SelectItem>
+                    <SelectItem value="Networking">Networking</SelectItem>
+                    <SelectItem value="Gastronomia">Gastronomia</SelectItem>
+                    <SelectItem value="Esportes">Esportes</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="socialMedia"
+            render={({ field }) => (
+              <SocialMediaInputs
+                value={field.value || []}
+                onChange={field.onChange}
+                label="Redes Sociais"
+              />
+            )}
+          />
+            
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="capacity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Capacidade</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="1" placeholder="Número de participantes" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+              
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preço (opcional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="0" 
+                      step="0.01"
+                      placeholder="Deixe em branco se for gratuito" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
           
         <Button type="submit" className="w-full md:w-auto">
