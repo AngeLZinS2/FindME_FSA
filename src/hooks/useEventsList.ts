@@ -152,22 +152,32 @@ const eventsList: EventProps[] = [
 
 // Helper function to convert user events to the EventProps format
 const convertUserEventToEventProps = (userEvent: any): EventProps => {
+  console.log("Converting user event:", userEvent);
+  
   // Extract the date part from the full Date object or date string
   let eventDate;
-  if (typeof userEvent.data === 'object' && userEvent.data instanceof Date) {
-    eventDate = userEvent.data.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-  } else if (typeof userEvent.date === 'string') {
-    eventDate = userEvent.date;
-  } else if (typeof userEvent.data === 'string') {
-    // For dates stored as strings in admin events
-    const date = new Date(userEvent.data);
-    eventDate = date.toISOString().split('T')[0];
+  if (userEvent.data) {
+    // For events from admin panel that use 'data' field
+    if (typeof userEvent.data === 'object' && userEvent.data instanceof Date) {
+      eventDate = userEvent.data.toISOString().split('T')[0];
+    } else if (typeof userEvent.data === 'string') {
+      const date = new Date(userEvent.data);
+      eventDate = date.toISOString().split('T')[0];
+    }
+  } else if (userEvent.date) {
+    // For events that use 'date' field
+    if (typeof userEvent.date === 'object' && userEvent.date instanceof Date) {
+      eventDate = userEvent.date.toISOString().split('T')[0];
+    } else if (typeof userEvent.date === 'string') {
+      const date = new Date(userEvent.date);
+      eventDate = date.toISOString().split('T')[0];
+    }
   } else {
     // Fallback to today's date if no valid date format is found
     eventDate = new Date().toISOString().split('T')[0];
   }
 
-  return {
+  const convertedEvent = {
     id: userEvent.id.toString(),
     title: userEvent.titulo || userEvent.title,
     description: userEvent.descricao || userEvent.description,
@@ -180,6 +190,9 @@ const convertUserEventToEventProps = (userEvent: any): EventProps => {
     image: userEvent.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
     socialMedia: userEvent.socialMedia || [],
   };
+
+  console.log("Converted event:", convertedEvent);
+  return convertedEvent;
 };
 
 // Map categories to standardized format
@@ -198,20 +211,30 @@ const mapCategoryToStandard = (category: string): string => {
     'sports': 'Esportes',
   };
 
-  return categoryMap[category.toLowerCase()] || category;
+  return categoryMap[category?.toLowerCase()] || category || 'Outros';
 };
 
 export const useEventsList = () => {
   const [events, setEvents] = useState<EventProps[]>(eventsList);
   
   useEffect(() => {
+    console.log("useEventsList effect running...");
+    
     // Check if there are approved user events in localStorage
     const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
-    const approvedEvents = adminEvents.filter((event: any) => event.status === "aprovado");
+    console.log("Admin events from localStorage:", adminEvents);
+    
+    const approvedEvents = adminEvents.filter((event: any) => {
+      console.log("Checking event status:", event.status);
+      return event.status === "aprovado";
+    });
+    
+    console.log("Approved events:", approvedEvents);
     
     if (approvedEvents.length > 0) {
       // Convert user events to the correct format
       const formattedUserEvents = approvedEvents.map(convertUserEventToEventProps);
+      console.log("Formatted user events:", formattedUserEvents);
       
       // Combine with sample events
       const allEvents = [...eventsList, ...formattedUserEvents];
@@ -223,8 +246,10 @@ export const useEventsList = () => {
         return eventDate >= currentDate;
       });
       
+      console.log("Final events list:", futureEvents);
       setEvents(futureEvents);
     } else {
+      console.log("No approved events found, using default events");
       // Filter out past events from the sample data
       const currentDate = new Date();
       const futureEvents = eventsList.filter(event => {
