@@ -1,6 +1,6 @@
 
-import React from "react";
-import { MapPin, Navigation } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { MapPin, Navigation, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MapLocationProps {
@@ -8,14 +8,79 @@ interface MapLocationProps {
   className?: string;
 }
 
+interface Coordinates {
+  lat: number;
+  lon: number;
+}
+
 const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) => {
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const encodedAddress = encodeURIComponent(address);
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
   const wazeUrl = `https://waze.com/ul?q=${encodedAddress}`;
 
-  // We'll use a simple iframe with OpenStreetMap for now
-  // In a real app, you might want to use a proper maps API like Google Maps or Mapbox
-  const openStreetMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=-180%2C-90%2C180%2C90&layer=mapnik&marker=${encodeURIComponent(address)}`;
+  useEffect(() => {
+    const geocodeAddress = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        console.log("Geocoding address:", address);
+        
+        // Use Nominatim API for geocoding
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`
+        );
+        
+        if (!response.ok) {
+          throw new Error('Erro ao buscar localização');
+        }
+        
+        const data = await response.json();
+        console.log("Geocoding response:", data);
+        
+        if (data && data.length > 0) {
+          const location = data[0];
+          setCoordinates({
+            lat: parseFloat(location.lat),
+            lon: parseFloat(location.lon)
+          });
+        } else {
+          setError('Localização não encontrada');
+        }
+      } catch (err) {
+        console.error("Geocoding error:", err);
+        setError('Erro ao carregar mapa');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (address) {
+      geocodeAddress();
+    }
+  }, [address, encodedAddress]);
+
+  // Generate the map URL with the actual coordinates
+  const getMapUrl = () => {
+    if (!coordinates) return null;
+    
+    const { lat, lon } = coordinates;
+    const zoom = 15;
+    const bbox = [
+      lon - 0.01, // west
+      lat - 0.01, // south  
+      lon + 0.01, // east
+      lat + 0.01  // north
+    ].join(',');
+    
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+  };
+
+  const mapUrl = getMapUrl();
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -25,16 +90,37 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
       </div>
       
       <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
-        <iframe
-          title="Event Location"
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          scrolling="no"
-          marginHeight={0}
-          marginWidth={0}
-          src={openStreetMapUrl}
-        />
+        {loading ? (
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="ml-2 text-sm">Carregando mapa...</span>
+          </div>
+        ) : error ? (
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <div className="text-center">
+              <MapPin className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+          </div>
+        ) : mapUrl ? (
+          <iframe
+            title="Event Location"
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            scrolling="no"
+            marginHeight={0}
+            marginWidth={0}
+            src={mapUrl}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <div className="text-center">
+              <MapPin className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Localização não disponível</p>
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="flex flex-wrap gap-2">
