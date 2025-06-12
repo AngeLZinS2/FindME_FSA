@@ -8,6 +8,7 @@ import Layout from "./components/Layout";
 import AdminLayout from "./components/AdminLayout";
 import Home from "./pages/Index";
 import Events from "./pages/Events";
+import EventDetails from "./pages/EventDetails";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="eventos" element={<Events />} />
+            <Route path="eventos/:id" element={<EventDetails />} />
             <Route path="login" element={<Login />} />
             <Route path="registro" element={<Register />} />
             <Route path="perfil" element={<Profile />} />

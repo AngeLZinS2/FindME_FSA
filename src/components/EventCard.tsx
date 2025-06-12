@@ -41,7 +41,7 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
   const isAlmostFull = capacityPercentage >= 80;
   const isFull = attendees >= capacity;
 
-  const formattedDate = new Date(date).toLocaleDateString("en-US", {
+  const formattedDate = new Date(date).toLocaleDateString("pt-BR", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -91,7 +91,7 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
           <div className="flex items-center gap-1 col-span-2">
             <Users size={12} className="flex-shrink-0" />
             <span>
-              {attendees}/{capacity} {isFull ? "(Full)" : isAlmostFull ? "(Almost Full)" : ""}
+              {attendees}/{capacity} {isFull ? "(Lotado)" : isAlmostFull ? "(Quase lotado)" : ""}
             </span>
           </div>
         </div>
@@ -104,9 +104,9 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
       </CardContent>
 
       <CardFooter className="pt-2">
-        <Button asChild className="w-full" variant={isFull ? "outline" : "default"} disabled={isFull}>
-          <Link to={`/events/${id}`}>
-            {isFull ? "Join Waitlist" : "View Details"}
+        <Button asChild className="w-full" variant={isFull ? "outline" : "default"}>
+          <Link to={`/eventos/${id}`}>
+            Ver detalhes
           </Link>
         </Button>
       </CardFooter>
