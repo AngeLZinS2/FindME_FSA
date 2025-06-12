@@ -82,7 +82,7 @@ const EventDetails = () => {
                   <div>
                     <h1 className="text-3xl font-bold">{event.title}</h1>
                     <p className="text-muted-foreground mt-2">
-                      Organizado por {event.organizador || "Organizador"}
+                      Evento na categoria {event.category}
                     </p>
                   </div>
                 </div>
@@ -177,18 +177,9 @@ const EventDetails = () => {
                 <Separator />
 
                 <div className="space-y-3">
-                  {event.preco && event.preco > 0 ? (
-                    <div className="text-center">
-                      <p className="text-2xl font-bold">
-                        R$ {event.preco.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">por pessoa</p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">Gratuito</p>
-                    </div>
-                  )}
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">Gratuito</p>
+                  </div>
 
                   <Button 
                     className="w-full" 
