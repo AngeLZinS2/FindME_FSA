@@ -5,6 +5,7 @@ import { Search, MapPin, Calendar, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Logo from "@/components/Logo";
+import NearbyEvents from "@/components/NearbyEvents";
 
 const categoryIcons = [
   { name: "Música", icon: "🎵" },
@@ -70,6 +71,13 @@ const Home = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Nearby Events Section */}
+      <section className="py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          <NearbyEvents />
         </div>
       </section>
 
