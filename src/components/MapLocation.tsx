@@ -30,30 +30,51 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
       try {
         console.log("Geocoding address:", address);
         
-        // Use Nominatim API for geocoding
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`
+        // Estratégia 1: Busca com endereço completo
+        let response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=BR`
         );
         
-        if (!response.ok) {
-          throw new Error('Erro ao buscar localização');
+        let data = await response.json();
+        console.log("Geocoding response (full address):", data);
+        
+        // Estratégia 2: Se não encontrar, tenta buscar só a cidade
+        if (!data || data.length === 0) {
+          console.log("Trying with city name only...");
+          const cityMatch = address.match(/Feira de Santana|Salvador|São Paulo|Rio de Janeiro|Brasília/i);
+          if (cityMatch) {
+            const cityName = cityMatch[0];
+            const cityQuery = encodeURIComponent(`${cityName}, BA, Brasil`);
+            response = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${cityQuery}&limit=1&countrycodes=BR`
+            );
+            data = await response.json();
+            console.log("Geocoding response (city only):", data);
+          }
         }
         
-        const data = await response.json();
-        console.log("Geocoding response:", data);
-        
-        if (data && data.length > 0) {
+        // Estratégia 3: Se ainda não encontrar, usa coordenadas padrão para Feira de Santana
+        if (!data || data.length === 0) {
+          console.log("Using default coordinates for Feira de Santana");
+          setCoordinates({
+            lat: -12.2577,
+            lon: -38.9668
+          });
+        } else {
           const location = data[0];
           setCoordinates({
             lat: parseFloat(location.lat),
             lon: parseFloat(location.lon)
           });
-        } else {
-          setError('Localização não encontrada');
         }
       } catch (err) {
         console.error("Geocoding error:", err);
-        setError('Erro ao carregar mapa');
+        // Em caso de erro, usa coordenadas padrão
+        console.log("Using fallback coordinates due to error");
+        setCoordinates({
+          lat: -12.2577,
+          lon: -38.9668
+        });
       } finally {
         setLoading(false);
       }
@@ -94,13 +115,6 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <Loader2 className="h-6 w-6 animate-spin" />
             <span className="ml-2 text-sm">Carregando mapa...</span>
-          </div>
-        ) : error ? (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <div className="text-center">
-              <MapPin className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">{error}</p>
-            </div>
           </div>
         ) : mapUrl ? (
           <iframe
