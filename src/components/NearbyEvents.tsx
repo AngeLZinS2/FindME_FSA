@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { MapPin, Navigation, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useEventsList } from "@/hooks/useEventsList";
 import { calculateDistance, geocodeAddress } from "@/lib/geolocationUtils";
@@ -17,18 +18,20 @@ const NearbyEvents = () => {
   const { events } = useEventsList();
   const [nearbyEvents, setNearbyEvents] = useState<EventWithDistance[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [searchRadius, setSearchRadius] = useState<number[]>([5]); // Padrão: 5km
 
   useEffect(() => {
     if (latitude && longitude) {
       calculateNearbyEvents();
     }
-  }, [latitude, longitude, events]);
+  }, [latitude, longitude, events, searchRadius]);
 
   const calculateNearbyEvents = async () => {
     if (!latitude || !longitude) return;
     
     setIsCalculating(true);
-    console.log("Calculando eventos próximos para:", latitude, longitude);
+    const radiusInKm = searchRadius[0];
+    console.log(`Calculando eventos próximos para: ${latitude}, ${longitude} - Raio: ${radiusInKm}km`);
     
     const eventsWithDistance: EventWithDistance[] = [];
     
@@ -46,8 +49,8 @@ const NearbyEvents = () => {
           
           console.log(`Evento: ${event.title}, Distância: ${distance.toFixed(2)}km`);
           
-          // Incluir eventos dentro de 50km
-          if (distance <= 50) {
+          // Incluir eventos dentro do raio definido pelo usuário
+          if (distance <= radiusInKm) {
             eventsWithDistance.push({
               ...event,
               distance: distance
@@ -65,6 +68,20 @@ const NearbyEvents = () => {
     console.log("Eventos próximos encontrados:", eventsWithDistance.length);
     setNearbyEvents(eventsWithDistance);
     setIsCalculating(false);
+  };
+
+  const formatDistance = (km: number) => {
+    if (km < 1) {
+      return `${Math.round(km * 1000)}m`;
+    }
+    return `${km}km`;
+  };
+
+  const formatRadius = (km: number) => {
+    if (km < 1) {
+      return `${Math.round(km * 1000)} metros`;
+    }
+    return `${km} km`;
   };
 
   if (loading) {
@@ -116,7 +133,7 @@ const NearbyEvents = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
-              <CardTitle>Eventos Próximos (50km)</CardTitle>
+              <CardTitle>Eventos Próximos</CardTitle>
             </div>
             <Button onClick={calculateNearbyEvents} variant="outline" size="sm" disabled={isCalculating}>
               {isCalculating ? (
@@ -134,11 +151,33 @@ const NearbyEvents = () => {
           </div>
           <CardDescription>
             {nearbyEvents.length > 0 
-              ? `${nearbyEvents.length} eventos encontrados perto de você`
-              : "Nenhum evento encontrado em um raio de 50km"
+              ? `${nearbyEvents.length} eventos encontrados em um raio de ${formatRadius(searchRadius[0])}`
+              : `Nenhum evento encontrado em um raio de ${formatRadius(searchRadius[0])}`
             }
           </CardDescription>
         </CardHeader>
+        
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Raio de busca: {formatRadius(searchRadius[0])}
+              </label>
+              <Slider
+                value={searchRadius}
+                onValueChange={setSearchRadius}
+                min={0.05} // 50 metros
+                max={150} // 150km
+                step={0.05}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>50m</span>
+                <span>150km</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
         
         {isCalculating && (
           <CardContent>
@@ -156,7 +195,7 @@ const NearbyEvents = () => {
             <div key={event.id} className="relative">
               <EventCard event={event} />
               <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-medium">
-                {event.distance.toFixed(1)}km
+                {formatDistance(event.distance)}
               </div>
             </div>
           ))}
