@@ -26,8 +26,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
-// Esquema de validação para o formulário de registro
 const registerSchema = z.object({
   name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Digite um email válido"),
@@ -46,6 +46,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const Register = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signUp, loading } = useSupabaseAuth();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -58,23 +59,22 @@ const Register = () => {
     },
   });
 
-  const onSubmit = (data: RegisterFormValues) => {
-    // Em uma aplicação real, você enviaria esses dados para um servidor
-    console.log("Dados de registro:", data);
+  const onSubmit = async (data: RegisterFormValues) => {
+    const { error } = await signUp(data.email, data.password, data.name, data.userType);
     
-    // Simular um registro bem-sucedido
-    localStorage.setItem("currentUser", JSON.stringify({ 
-      email: data.email, 
-      name: data.name,
-      userType: data.userType
-    }));
-    
-    toast({
-      title: "Registro concluído",
-      description: `Bem-vindo(a), ${data.name}!`,
-    });
-    
-    navigate("/perfil");
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro no registro",
+        description: error.message || "Ocorreu um erro ao criar sua conta",
+      });
+    } else {
+      toast({
+        title: "Registro concluído",
+        description: `Bem-vindo(a), ${data.name}! Verifique seu email para confirmar a conta.`,
+      });
+      navigate("/perfil");
+    }
   };
 
   return (
@@ -168,7 +168,7 @@ const Register = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={loading}>
                   <UserPlus className="mr-2 h-4 w-4" /> Registrar
                 </Button>
               </form>

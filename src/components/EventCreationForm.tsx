@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
 import SocialMediaInputs, { SocialMediaLink } from "@/components/SocialMediaInputs";
 import { getCategoryPlaceholderImage } from "@/lib/imageUtils";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseEvents } from "@/hooks/useSupabaseEvents";
 
 const socialMediaSchema = z.object({
   id: z.string(),
@@ -54,6 +56,8 @@ interface EventCreationFormProps {
 
 const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
   const { toast } = useToast();
+  const { user } = useSupabaseAuth();
+  const { createEvent } = useSupabaseEvents();
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -71,56 +75,46 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
     },
   });
 
-  const onSubmit = (data: EventFormValues) => {
-    console.log("Dados do novo evento:", data);
-    
-    const currentUser = localStorage.getItem("currentUser");
-    if (currentUser) {
-      const user = JSON.parse(currentUser);
-      
-      const userEvents = JSON.parse(localStorage.getItem("userEvents") || "[]");
-      const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
-      
-      const eventDate = new Date(`${data.date}T${data.time}`);
-      
-      // Get image from upload or use placeholder based on category
-      const eventImage = data.image || getCategoryPlaceholderImage(data.category);
-      
-      // Ensure social media data is properly typed with all required fields
-      const socialMedia: SocialMediaLink[] = (data.socialMedia || []).map(item => ({
-        id: item.id,
-        platform: item.platform,
-        url: item.url
-      }));
-      
-      const newEvent = {
-        id: Date.now(),
-        titulo: data.title,
-        descricao: data.description,
-        data: eventDate,
-        local: data.location,
-        categoria: data.category,
-        capacidade: parseInt(data.capacity),
-        preco: data.price ? parseFloat(data.price) : 0,
-        organizador: user.name,
-        organizadorId: user.email,
-        status: "pendente",
-        attendees: [],
-        image: eventImage,
-        socialMedia,
-      };
-      
-      userEvents.push({
-        ...newEvent,
-        date: data.date,
-        time: data.time,
+  const onSubmit = async (data: EventFormValues) => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Você precisa estar logado para criar um evento.",
       });
-      
-      adminEvents.push(newEvent);
-      
-      localStorage.setItem("userEvents", JSON.stringify(userEvents));
-      localStorage.setItem("adminEvents", JSON.stringify(adminEvents));
-      
+      return;
+    }
+
+    const eventImage = data.image || getCategoryPlaceholderImage(data.category);
+    
+    const socialMedia: SocialMediaLink[] = (data.socialMedia || []).map(item => ({
+      id: item.id,
+      platform: item.platform,
+      url: item.url
+    }));
+    
+    const eventData = {
+      title: data.title,
+      description: data.description,
+      date: data.date,
+      time: data.time,
+      location: data.location,
+      category: data.category,
+      capacity: parseInt(data.capacity),
+      price: data.price ? parseFloat(data.price) : 0,
+      image: eventImage,
+      socialMedia,
+    };
+
+    const { error } = await createEvent(eventData, user.id, user.name);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar evento",
+        description: error.message || "Não foi possível criar o evento.",
+      });
+    } else {
       toast({
         title: "Evento enviado para aprovação!",
         description: `O evento "${data.title}" foi cadastrado e está aguardando aprovação do administrador.`,
@@ -131,8 +125,6 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
       if (onSuccess) onSuccess(data);
     }
   };
-
-  const categoryValue = form.watch("category");
 
   return (
     <Form {...form}>

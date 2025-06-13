@@ -19,8 +19,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
-// Esquema de validação para o formulário de login
 const loginSchema = z.object({
   email: z.string().email("Digite um email válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
@@ -28,15 +28,10 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-// Dados de usuários mockados (em uma aplicação real, isso viria de um banco de dados)
-const users = [
-  { email: "usuario@exemplo.com", password: "senha123", name: "Usuário Teste", userType: "attendee" },
-  { email: "criador@exemplo.com", password: "senha123", name: "Criador de Eventos", userType: "creator" }
-];
-
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signIn, loading } = useSupabaseAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,32 +41,21 @@ const Login = () => {
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    // Verificar se o usuário existe
-    const user = users.find(
-      (user) => user.email === data.email && user.password === data.password
-    );
+  const onSubmit = async (data: LoginFormValues) => {
+    const { error } = await signIn(data.email, data.password);
 
-    if (user) {
-      // Em uma aplicação real, você armazenaria um token JWT ou similar
-      localStorage.setItem("currentUser", JSON.stringify({ 
-        email: user.email, 
-        name: user.name,
-        userType: user.userType
-      }));
-      
-      toast({
-        title: "Login bem-sucedido",
-        description: `Bem-vindo(a), ${user.name}!`,
-      });
-      
-      navigate("/perfil");
-    } else {
+    if (error) {
       toast({
         variant: "destructive",
         title: "Falha na autenticação",
-        description: "Email ou senha incorretos",
+        description: error.message || "Email ou senha incorretos",
       });
+    } else {
+      toast({
+        title: "Login bem-sucedido",
+        description: "Bem-vindo de volta!",
+      });
+      navigate("/perfil");
     }
   };
 
@@ -116,7 +100,7 @@ const Login = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="mr-2 h-4 w-4" /> Entrar
                 </Button>
               </form>

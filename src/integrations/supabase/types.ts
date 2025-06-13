@@ -9,7 +9,170 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      admin_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          role: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          role: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          role?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      event_attendees: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          capacity: number
+          category: string
+          created_at: string | null
+          creator_id: string | null
+          creator_name: string
+          date: string
+          description: string
+          id: string
+          image: string | null
+          location: string
+          price: number | null
+          social_media: Json | null
+          status: string
+          time: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity: number
+          category: string
+          created_at?: string | null
+          creator_id?: string | null
+          creator_name: string
+          date: string
+          description: string
+          id?: string
+          image?: string | null
+          location: string
+          price?: number | null
+          social_media?: Json | null
+          status?: string
+          time: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity?: number
+          category?: string
+          created_at?: string | null
+          creator_id?: string | null
+          creator_name?: string
+          date?: string
+          description?: string
+          id?: string
+          image?: string | null
+          location?: string
+          price?: number | null
+          social_media?: Json | null
+          status?: string
+          time?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string | null
+          user_type: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+          user_type?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

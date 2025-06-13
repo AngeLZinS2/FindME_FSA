@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
@@ -23,6 +22,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import EventCreationForm from "@/components/EventCreationForm";
 import UserEvents from "@/components/UserEvents";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 // Esquema de validação para o formulário de perfil
 const profileSchema = z.object({
@@ -38,68 +38,75 @@ const Profile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [user, setUser] = useState<{ name: string; email: string; userType?: string } | null>(null);
+  const { user, loading, signOut, updateProfile } = useSupabaseAuth();
   const defaultTab = searchParams.get("tab") || "profile";
 
   useEffect(() => {
-    // Verificar se o usuário está logado
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    } else {
-      // Redirecionar para a página de login se não estiver logado
+    if (!loading && !user) {
       navigate("/login");
     }
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
-      phone: "",
-      city: "",
+      phone: user?.phone || "",
+      city: user?.city || "",
     },
     values: {
       name: user?.name || "",
       email: user?.email || "",
-      phone: "",
-      city: "",
+      phone: user?.phone || "",
+      city: user?.city || "",
     },
   });
 
-  const onSubmit = (data: ProfileFormValues) => {
-    // Em uma aplicação real, você enviaria esses dados para um servidor
-    console.log("Dados de perfil atualizados:", data);
+  const onSubmit = async (data: ProfileFormValues) => {
+    const { error } = await updateProfile(data);
     
-    // Atualizar os dados no localStorage
-    localStorage.setItem("currentUser", JSON.stringify({ 
-      ...user,
-      email: data.email, 
-      name: data.name 
-    }));
-    
-    // Atualizar o estado
-    setUser(prev => prev ? { ...prev, email: data.email, name: data.name } : null);
-    
-    toast({
-      title: "Perfil atualizado",
-      description: "Suas informações foram atualizadas com sucesso.",
-    });
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar o perfil.",
+      });
+    } else {
+      toast({
+        title: "Perfil atualizado",
+        description: "Suas informações foram atualizadas com sucesso.",
+      });
+    }
   };
 
-  const handleLogout = () => {
-    // Remover dados de usuário do localStorage
-    localStorage.removeItem("currentUser");
+  const handleLogout = async () => {
+    const { error } = await signOut();
     
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso.",
-    });
-    
-    // Redirecionar para a página inicial
-    navigate("/");
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao sair",
+        description: "Não foi possível fazer logout.",
+      });
+    } else {
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso.",
+      });
+      navigate("/");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-12">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return null; // Aguardando redirecionamento ou carregando
@@ -254,7 +261,6 @@ const Profile = () => {
                   <CardContent>
                     <EventCreationForm 
                       onSuccess={() => {
-                        // Navegar para a aba de eventos após criar com sucesso
                         navigate("/perfil?tab=events");
                       }}
                     />

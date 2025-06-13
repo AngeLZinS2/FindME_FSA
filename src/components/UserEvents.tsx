@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { CalendarCheck, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,61 +17,81 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseEvents } from "@/hooks/useSupabaseEvents";
 
 interface Event {
-  id: number;
+  id: string;
   title: string;
   description: string;
   date: string;
   time: string;
   location: string;
   category: string;
-  capacity: string;
-  price?: string;
-  creatorId: string;
-  creatorName: string;
+  capacity: number;
+  price: number;
+  image?: string;
   status: string;
-  attendees: string[];
+  creator_name: string;
+  social_media: any[];
 }
 
 const UserEvents = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [events, setEvents] = React.useState<Event[]>([]);
+  const { user } = useSupabaseAuth();
+  const { getUserEvents, deleteEvent } = useSupabaseEvents();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Buscar eventos do usuário ao carregar o componente
-  React.useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser");
+  useEffect(() => {
+    const fetchUserEvents = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      const { data, error } = await getUserEvents(user.id);
+      
+      if (data && !error) {
+        setEvents(data);
+      } else if (error) {
+        console.error("Error fetching user events:", error);
+      }
+      setLoading(false);
+    };
+
+    fetchUserEvents();
+  }, [user, getUserEvents]);
+
+  const handleDeleteEvent = async (id: string) => {
+    const { error } = await deleteEvent(id);
     
-    if (currentUser) {
-      const user = JSON.parse(currentUser);
-      const allEvents = JSON.parse(localStorage.getItem("userEvents") || "[]");
-      const userEvents = allEvents.filter((event: Event) => event.creatorId === user.email);
-      setEvents(userEvents);
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o evento.",
+      });
+    } else {
+      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+      toast({
+        title: "Evento excluído",
+        description: "O evento foi removido com sucesso.",
+      });
     }
-  }, []);
-
-  const deleteEvent = (id: number) => {
-    // Remover evento da lista no localStorage
-    const allEvents = JSON.parse(localStorage.getItem("userEvents") || "[]");
-    const updatedEvents = allEvents.filter((event: Event) => event.id !== id);
-    
-    localStorage.setItem("userEvents", JSON.stringify(updatedEvents));
-    
-    // Atualizar estado
-    setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-    
-    toast({
-      title: "Evento excluído",
-      description: "O evento foi removido com sucesso.",
-    });
   };
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
-  // Caso não tenha eventos
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   if (events.length === 0) {
     return (
       <div className="text-center py-12">
@@ -126,7 +146,7 @@ const UserEvents = () => {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => deleteEvent(event.id)}
+                        onClick={() => handleDeleteEvent(event.id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Excluir
@@ -164,8 +184,9 @@ const UserEvents = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">Status:</span>
-                  <Badge variant={event.status === "active" ? "default" : "secondary"}>
-                    {event.status === "active" ? "Ativo" : "Inativo"}
+                  <Badge variant={event.status === "approved" ? "default" : "secondary"}>
+                    {event.status === "approved" ? "Aprovado" : 
+                     event.status === "pending" ? "Pendente" : "Rejeitado"}
                   </Badge>
                 </div>
               </div>

@@ -17,19 +17,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Esquema de validação para o formulário de login
 const loginSchema = z.object({
   email: z.string().email("Digite um email válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
-
-// Dados de administradores mockados (em uma aplicação real, isso viria de um banco de dados)
-const adminUsers = [
-  { email: "admin@findme.com", password: "admin123", name: "Administrador Principal" }
-];
 
 const AdminLogin = () => {
   const { toast } = useToast();
@@ -43,19 +38,25 @@ const AdminLogin = () => {
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    // Verificar se o usuário é um administrador
-    const admin = adminUsers.find(
-      (user) => user.email === data.email && user.password === data.password
-    );
+  const onSubmit = async (data: LoginFormValues) => {
+    // Check if user exists in admin_users table
+    const { data: adminUser, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('email', data.email)
+      .eq('status', 'active')
+      .single();
 
-    if (admin) {
-      // Em uma aplicação real, você armazenaria um token JWT ou similar
-      localStorage.setItem("adminUser", JSON.stringify({ email: admin.email, name: admin.name }));
+    if (adminUser && data.password === 'admin123') { // Simple password check for demo
+      localStorage.setItem("adminUser", JSON.stringify({ 
+        email: adminUser.email, 
+        name: adminUser.name,
+        role: adminUser.role 
+      }));
       
       toast({
         title: "Login bem-sucedido",
-        description: `Bem-vindo(a), ${admin.name}!`,
+        description: `Bem-vindo(a), ${adminUser.name}!`,
       });
       
       navigate("/admin/dashboard");
