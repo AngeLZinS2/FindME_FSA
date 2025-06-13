@@ -18,47 +18,74 @@ export const useSupabaseAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+        
+        if (!mounted) return;
+        
         setSession(session);
         
         if (session?.user) {
           // Fetch user profile from our users table
-          const { data: userProfile, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', session.user.email)
-            .single();
-          
-          if (userProfile && !error) {
-            setUser({
-              id: userProfile.id,
-              email: userProfile.email,
-              name: userProfile.name,
-              userType: userProfile.user_type,
-              phone: userProfile.phone,
-              city: userProfile.city,
-            });
+          try {
+            const { data: userProfile, error } = await supabase
+              .from('users')
+              .select('*')
+              .eq('email', session.user.email)
+              .single();
+            
+            if (userProfile && !error && mounted) {
+              setUser({
+                id: userProfile.id,
+                email: userProfile.email,
+                name: userProfile.name,
+                userType: userProfile.user_type,
+                phone: userProfile.phone,
+                city: userProfile.city,
+              });
+            } else {
+              console.error('Error fetching user profile:', error);
+            }
+          } catch (error) {
+            console.error('Error in auth state change:', error);
           }
         } else {
           setUser(null);
         }
-        setLoading(false);
+        
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        // Trigger the auth state change manually for existing sessions
-        // This will fetch the user profile
-      } else {
-        setLoading(false);
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        // The onAuthStateChange will handle the session
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    getInitialSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, name: string, userType: string) => {

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, User, LogOut, UserCircle, Settings } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
@@ -13,23 +13,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+  const { user, signOut } = useSupabaseAuth();
 
-  useEffect(() => {
-    // Verificar se o usuário está logado
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-  }, [location]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser");
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    await signOut();
+    setIsMenuOpen(false);
   };
 
   const navigation = [
@@ -64,16 +57,16 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-2">
           <ThemeToggle />
           
-          {currentUser ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
                     <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                      {currentUser.name.charAt(0)}
+                      {user.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="max-w-[100px] truncate">{currentUser.name}</span>
+                  <span className="max-w-[100px] truncate">{user.name}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -147,15 +140,15 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="pt-4 flex flex-col gap-2">
-              {currentUser ? (
+              {user ? (
                 <>
                   <div className="flex items-center gap-2 p-2">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                        {currentUser.name.charAt(0)}
+                        {user.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{currentUser.name}</span>
+                    <span className="font-medium">{user.name}</span>
                   </div>
                   <Link 
                     to="/perfil" 
@@ -166,10 +159,7 @@ const Navbar = () => {
                     Meu Perfil
                   </Link>
                   <button 
-                    onClick={() => {
-                      handleLogout();
-                      setIsMenuOpen(false);
-                    }}
+                    onClick={handleLogout}
                     className="flex w-full items-center gap-2 py-2 px-3 text-left"
                   >
                     <LogOut className="h-4 w-4" />
