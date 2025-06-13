@@ -89,7 +89,7 @@ const ImageUpload = ({ onChange, value, label }: ImageUploadProps) => {
               <img 
                 src={value} 
                 alt="Preview" 
-                className="w-full h-48 object-cover rounded-md"
+                className="w-full h-48 object-contain rounded-md bg-muted/50 border"
               />
               <Button
                 type="button"
