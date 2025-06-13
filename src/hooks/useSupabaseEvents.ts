@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
+import { SocialMediaLink } from '@/components/SocialMediaInputs';
 
 interface CreateEventData {
   title: string;
@@ -13,7 +14,7 @@ interface CreateEventData {
   capacity: number;
   price?: number;
   image?: string;
-  socialMedia?: any[];
+  socialMedia?: SocialMediaLink[];
 }
 
 export const useSupabaseEvents = () => {
@@ -40,7 +41,7 @@ export const useSupabaseEvents = () => {
         attendees: 0, // We'll need to count from event_attendees table
         category: event.category,
         image: event.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
-        socialMedia: event.social_media || [],
+        socialMedia: Array.isArray(event.social_media) ? event.social_media as SocialMediaLink[] : [],
       }));
       setEvents(formattedEvents);
     } else if (error) {

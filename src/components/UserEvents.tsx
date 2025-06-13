@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { CalendarCheck, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useSupabaseEvents } from "@/hooks/useSupabaseEvents";
+import { SocialMediaLink } from "@/components/SocialMediaInputs";
+import { Json } from "@/integrations/supabase/types";
 
 interface Event {
   id: string;
@@ -33,7 +34,7 @@ interface Event {
   image?: string;
   status: string;
   creator_name: string;
-  social_media: any[];
+  social_media: Json;
 }
 
 const UserEvents = () => {
@@ -52,7 +53,7 @@ const UserEvents = () => {
       const { data, error } = await getUserEvents(user.id);
       
       if (data && !error) {
-        setEvents(data);
+        setEvents(data as Event[]);
       } else if (error) {
         console.error("Error fetching user events:", error);
       }
