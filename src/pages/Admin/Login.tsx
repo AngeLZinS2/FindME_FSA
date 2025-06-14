@@ -26,13 +26,6 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-interface AdminLoginResult {
-  email: string;
-  name: string;
-  role: string;
-  status: string;
-}
-
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -49,11 +42,10 @@ const AdminLogin = () => {
     console.log('Admin login attempt:', data.email);
     
     try {
-      // Verificar credenciais no banco de dados usando a função crypt do PostgreSQL
       const { data: authResult, error } = await supabase.rpc('verify_admin_login', {
         input_email: data.email,
         input_password: data.password
-      }) as { data: AdminLoginResult[] | null, error: any };
+      });
 
       if (error) {
         console.error('Database error:', error);
