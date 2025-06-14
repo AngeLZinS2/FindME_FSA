@@ -181,6 +181,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_admin_user: {
+        Args: {
+          admin_email: string
+          admin_name: string
+          admin_role: string
+          admin_password: string
+        }
+        Returns: undefined
+      }
+      update_admin_password: {
+        Args: { admin_id: string; new_password: string; update_data: Json }
+        Returns: undefined
+      }
       verify_admin_login: {
         Args: { input_email: string; input_password: string }
         Returns: {

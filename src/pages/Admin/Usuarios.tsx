@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { User, UserPlus, Edit, Trash2, Check, X } from "lucide-react";
 import { z } from "zod";
@@ -138,7 +137,7 @@ const AdminUsuarios = () => {
     try {
       if (editingAdmin) {
         // Editar administrador existente
-        const updateData: any = {
+        const updateData = {
           name: data.nome,
           email: data.email,
           role: data.cargo,
@@ -147,7 +146,7 @@ const AdminUsuarios = () => {
         // Se uma nova senha foi fornecida, incluir o hash
         if (data.senha.trim()) {
           // Usar a função do PostgreSQL para hash da senha
-          const { error: updateError } = await supabase.rpc('update_admin_password', {
+          const { error: updateError } = await (supabase.rpc as any)('update_admin_password', {
             admin_id: editingAdmin.id,
             new_password: data.senha,
             update_data: updateData
@@ -186,7 +185,7 @@ const AdminUsuarios = () => {
         });
       } else {
         // Adicionar novo administrador
-        const { error: insertError } = await supabase.rpc('create_admin_user', {
+        const { error: insertError } = await (supabase.rpc as any)('create_admin_user', {
           admin_email: data.email,
           admin_name: data.nome,
           admin_role: data.cargo,
