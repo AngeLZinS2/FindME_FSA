@@ -68,28 +68,39 @@ export const useSupabaseEvents = () => {
   };
 
   const createEvent = async (eventData: CreateEventData, creatorId: string, creatorName: string) => {
-    // Convert SocialMediaLink[] to Json format for database
-    const socialMediaJson = eventData.socialMedia ? JSON.parse(JSON.stringify(eventData.socialMedia)) : [];
+    console.log('useSupabaseEvents createEvent called with:', { eventData, creatorId, creatorName });
     
-    const { data, error } = await supabase
-      .from('events')
-      .insert({
-        title: eventData.title,
-        description: eventData.description,
-        date: eventData.date,
-        time: eventData.time,
-        location: eventData.location,
-        category: eventData.category,
-        capacity: eventData.capacity,
-        price: eventData.price || 0,
-        image: eventData.image,
-        creator_id: creatorId,
-        creator_name: creatorName,
-        social_media: socialMediaJson,
-        status: 'pending'
-      });
+    try {
+      // Convert SocialMediaLink[] to Json format for database
+      const socialMediaJson = eventData.socialMedia ? JSON.parse(JSON.stringify(eventData.socialMedia)) : [];
+      
+      console.log('Inserting event into database...');
+      
+      const { data, error } = await supabase
+        .from('events')
+        .insert({
+          title: eventData.title,
+          description: eventData.description,
+          date: eventData.date,
+          time: eventData.time,
+          location: eventData.location,
+          category: eventData.category,
+          capacity: eventData.capacity,
+          price: eventData.price || 0,
+          image: eventData.image,
+          creator_id: creatorId,
+          creator_name: creatorName,
+          social_media: socialMediaJson,
+          status: 'pending'
+        });
 
-    return { data, error };
+      console.log('Database response:', { data, error });
+
+      return { data, error };
+    } catch (exception) {
+      console.error('Exception in createEvent:', exception);
+      return { data: null, error: exception };
+    }
   };
 
   const getUserEvents = async (userId: string) => {

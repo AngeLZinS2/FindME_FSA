@@ -1,3 +1,4 @@
+
 import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -76,7 +77,11 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
   });
 
   const onSubmit = async (data: EventFormValues) => {
+    console.log('Form submitted with data:', data);
+    console.log('Current user:', user);
+
     if (!user) {
+      console.error('No user found');
       toast({
         variant: "destructive",
         title: "Erro",
@@ -85,44 +90,57 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
       return;
     }
 
-    const eventImage = data.image || getCategoryPlaceholderImage(data.category);
-    
-    const socialMedia: SocialMediaLink[] = (data.socialMedia || []).map(item => ({
-      id: item.id,
-      platform: item.platform,
-      url: item.url
-    }));
-    
-    const eventData = {
-      title: data.title,
-      description: data.description,
-      date: data.date,
-      time: data.time,
-      location: data.location,
-      category: data.category,
-      capacity: parseInt(data.capacity),
-      price: data.price ? parseFloat(data.price) : 0,
-      image: eventImage,
-      socialMedia,
-    };
+    try {
+      const eventImage = data.image || getCategoryPlaceholderImage(data.category);
+      
+      const socialMedia: SocialMediaLink[] = (data.socialMedia || []).map(item => ({
+        id: item.id,
+        platform: item.platform,
+        url: item.url
+      }));
+      
+      const eventData = {
+        title: data.title,
+        description: data.description,
+        date: data.date,
+        time: data.time,
+        location: data.location,
+        category: data.category,
+        capacity: parseInt(data.capacity),
+        price: data.price ? parseFloat(data.price) : 0,
+        image: eventImage,
+        socialMedia,
+      };
 
-    const { error } = await createEvent(eventData, user.id, user.name);
-    
-    if (error) {
+      console.log('Creating event with data:', eventData);
+
+      const { error } = await createEvent(eventData, user.id, user.name);
+      
+      if (error) {
+        console.error('Error creating event:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar evento",
+          description: error.message || "Não foi possível criar o evento.",
+        });
+      } else {
+        console.log('Event created successfully');
+        toast({
+          title: "Evento criado com sucesso!",
+          description: `O evento "${data.title}" foi criado e está aguardando aprovação.`,
+        });
+        
+        form.reset();
+        
+        if (onSuccess) onSuccess(data);
+      }
+    } catch (error) {
+      console.error('Exception creating event:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao criar evento",
-        description: error.message || "Não foi possível criar o evento.",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao criar o evento. Tente novamente.",
       });
-    } else {
-      toast({
-        title: "Evento enviado para aprovação!",
-        description: `O evento "${data.title}" foi cadastrado e está aguardando aprovação do administrador.`,
-      });
-      
-      form.reset();
-      
-      if (onSuccess) onSuccess(data);
     }
   };
 
