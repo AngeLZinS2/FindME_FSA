@@ -12,6 +12,25 @@ interface AuthUser {
   city?: string;
 }
 
+// Function to clean up any existing auth state
+const cleanupAuthState = () => {
+  // Clear all auth-related items from localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Clear sessionStorage as well
+  if (typeof sessionStorage !== 'undefined') {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  }
+};
+
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -19,6 +38,20 @@ export const useSupabaseAuth = () => {
 
   useEffect(() => {
     let mounted = true;
+
+    // Clean up any existing problematic auth state first
+    cleanupAuthState();
+
+    // Force sign out any existing session
+    const forceCleanStart = async () => {
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (error) {
+        console.log('No existing session to sign out');
+      }
+    };
+
+    forceCleanStart();
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -29,8 +62,8 @@ export const useSupabaseAuth = () => {
         
         setSession(session);
         
-        if (session?.user) {
-          // Fetch user profile from our users table
+        if (session?.user && event === 'SIGNED_IN') {
+          // Only fetch user profile after successful sign in
           try {
             const { data: userProfile, error } = await supabase
               .from('users')
@@ -48,11 +81,11 @@ export const useSupabaseAuth = () => {
                 city: userProfile.city,
               });
             } else {
-              console.log('User profile not found or error:', error);
+              console.log('User profile not found:', error);
               setUser(null);
             }
           } catch (error) {
-            console.error('Error in auth state change:', error);
+            console.error('Error fetching user profile:', error);
             setUser(null);
           }
         } else {
@@ -65,27 +98,10 @@ export const useSupabaseAuth = () => {
       }
     );
 
-    // Check for existing session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-        // The onAuthStateChange will handle the session processing
-        // Just make sure we set loading to false if no session
-        if (!session && mounted) {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Error in getInitialSession:', error);
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    getInitialSession();
+    // Don't check for existing session - start fresh
+    if (mounted) {
+      setLoading(false);
+    }
 
     return () => {
       mounted = false;
@@ -94,50 +110,79 @@ export const useSupabaseAuth = () => {
   }, []);
 
   const signUp = async (email: string, password: string, name: string, userType: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
+    try {
+      // Clean up before attempting signup
+      cleanupAuthState();
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
 
-    if (data.user && !error) {
-      // Create user profile in our users table
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          email,
-          name,
-          user_type: userType,
-        });
+      if (data.user && !error) {
+        // Create user profile in our users table
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            email,
+            name,
+            user_type: userType,
+          });
 
-      if (profileError) {
-        console.error('Error creating user profile:', profileError);
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+        }
       }
+
+      return { data, error };
+    } catch (error) {
+      console.error('Signup error:', error);
+      return { data: null, error };
     }
-
-    return { data, error };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      // Clean up before attempting signin
+      cleanupAuthState();
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    return { data, error };
+      return { data, error };
+    } catch (error) {
+      console.error('Signin error:', error);
+      return { data: null, error };
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
+    try {
+      cleanupAuthState();
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
       setUser(null);
       setSession(null);
+      
+      // Force page reload to ensure clean state
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+      
+      return { error };
+    } catch (error) {
+      console.error('Signout error:', error);
+      return { error };
     }
-    return { error };
   };
 
   const updateProfile = async (updates: Partial<AuthUser>) => {

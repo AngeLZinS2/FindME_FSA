@@ -41,19 +41,22 @@ const Login = () => {
     },
   });
 
-  // Simple redirect logic
+  // Only redirect if user exists and is properly authenticated
   useEffect(() => {
-    if (user) {
-      console.log('User is logged in, redirecting to profile');
+    if (user && user.email) {
+      console.log('User authenticated, redirecting to profile');
       navigate("/perfil", { replace: true });
     }
   }, [user, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
+      console.log('Attempting login for:', data.email);
+      
       const { error } = await signIn(data.email, data.password);
 
       if (error) {
+        console.error('Login error:', error);
         toast({
           variant: "destructive",
           title: "Falha na autenticação",
@@ -66,6 +69,7 @@ const Login = () => {
         });
       }
     } catch (error) {
+      console.error('Login exception:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -74,7 +78,7 @@ const Login = () => {
     }
   };
 
-  // Show loading only when actually loading
+  // Show loading only when authentication is being processed
   if (loading) {
     return (
       <div className="container mx-auto py-12">
