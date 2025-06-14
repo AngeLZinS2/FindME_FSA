@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { User, UserPlus, Edit, Trash2, Check, X } from "lucide-react";
 import { z } from "zod";
@@ -78,14 +79,19 @@ const AdminUsuarios = () => {
   // Buscar administradores do banco de dados
   const fetchAdmins = async () => {
     try {
+      console.log('🔍 Iniciando busca de administradores...');
       setLoading(true);
+      
       const { data, error } = await supabase
         .from('admin_users')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('📊 Resultado da busca:', { data, error });
+      console.log('📈 Número de administradores encontrados:', data?.length || 0);
+
       if (error) {
-        console.error('Erro ao buscar administradores:', error);
+        console.error('❌ Erro ao buscar administradores:', error);
         toast({
           variant: "destructive",
           title: "Erro",
@@ -94,9 +100,10 @@ const AdminUsuarios = () => {
         return;
       }
 
+      console.log('✅ Administradores carregados com sucesso:', data);
       setAdmins(data || []);
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('💥 Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -135,6 +142,8 @@ const AdminUsuarios = () => {
 
   const onSubmit = async (data: UsuarioFormValues) => {
     try {
+      console.log('📝 Iniciando submissão do formulário:', { editingAdmin: !!editingAdmin, data: { ...data, senha: '***' } });
+      
       if (editingAdmin) {
         // Editar administrador existente
         const updateData = {
@@ -145,6 +154,7 @@ const AdminUsuarios = () => {
 
         // Se uma nova senha foi fornecida, incluir o hash
         if (data.senha.trim()) {
+          console.log('🔒 Atualizando com nova senha');
           // Usar a função do PostgreSQL para hash da senha
           const { error: updateError } = await (supabase.rpc as any)('update_admin_password', {
             admin_id: editingAdmin.id,
@@ -153,7 +163,7 @@ const AdminUsuarios = () => {
           });
 
           if (updateError) {
-            console.error('Erro ao atualizar administrador:', updateError);
+            console.error('❌ Erro ao atualizar administrador:', updateError);
             toast({
               variant: "destructive",
               title: "Erro",
@@ -162,6 +172,7 @@ const AdminUsuarios = () => {
             return;
           }
         } else {
+          console.log('📝 Atualizando apenas dados básicos');
           // Atualizar apenas os dados básicos
           const { error: updateError } = await supabase
             .from('admin_users')
@@ -169,7 +180,7 @@ const AdminUsuarios = () => {
             .eq('id', editingAdmin.id);
 
           if (updateError) {
-            console.error('Erro ao atualizar administrador:', updateError);
+            console.error('❌ Erro ao atualizar administrador:', updateError);
             toast({
               variant: "destructive",
               title: "Erro",
@@ -179,11 +190,13 @@ const AdminUsuarios = () => {
           }
         }
         
+        console.log('✅ Administrador atualizado com sucesso');
         toast({
           title: "Usuário atualizado",
           description: `O perfil de ${data.nome} foi atualizado com sucesso.`,
         });
       } else {
+        console.log('👤 Criando novo administrador');
         // Adicionar novo administrador
         const { error: insertError } = await (supabase.rpc as any)('create_admin_user', {
           admin_email: data.email,
@@ -193,7 +206,7 @@ const AdminUsuarios = () => {
         });
 
         if (insertError) {
-          console.error('Erro ao criar administrador:', insertError);
+          console.error('❌ Erro ao criar administrador:', insertError);
           toast({
             variant: "destructive",
             title: "Erro",
@@ -202,6 +215,7 @@ const AdminUsuarios = () => {
           return;
         }
         
+        console.log('✅ Administrador criado com sucesso');
         toast({
           title: "Administrador criado",
           description: `${data.nome} foi adicionado como administrador.`,
@@ -209,9 +223,10 @@ const AdminUsuarios = () => {
       }
       
       setIsDialogOpen(false);
+      console.log('🔄 Recarregando lista de administradores...');
       fetchAdmins(); // Recarregar a lista
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('💥 Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -222,13 +237,14 @@ const AdminUsuarios = () => {
 
   const deleteAdmin = async (id: string) => {
     try {
+      console.log('🗑️ Excluindo administrador:', id);
       const { error } = await supabase
         .from('admin_users')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao excluir administrador:', error);
+        console.error('❌ Erro ao excluir administrador:', error);
         toast({
           variant: "destructive",
           title: "Erro",
@@ -237,6 +253,7 @@ const AdminUsuarios = () => {
         return;
       }
       
+      console.log('✅ Administrador excluído com sucesso');
       toast({
         title: "Administrador removido",
         description: "O administrador foi removido do sistema.",
@@ -245,7 +262,7 @@ const AdminUsuarios = () => {
       
       fetchAdmins(); // Recarregar a lista
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('💥 Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -256,6 +273,7 @@ const AdminUsuarios = () => {
 
   const toggleStatus = async (id: string, currentStatus: string) => {
     try {
+      console.log('🔄 Alterando status do administrador:', id, 'de', currentStatus);
       const newStatus = currentStatus === "active" ? "inactive" : "active";
       
       const { error } = await supabase
@@ -264,7 +282,7 @@ const AdminUsuarios = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao alterar status:', error);
+        console.error('❌ Erro ao alterar status:', error);
         toast({
           variant: "destructive",
           title: "Erro",
@@ -273,6 +291,7 @@ const AdminUsuarios = () => {
         return;
       }
       
+      console.log('✅ Status alterado com sucesso para:', newStatus);
       toast({
         title: "Status alterado",
         description: `O administrador agora está ${newStatus === "active" ? "Ativo" : "Inativo"}.`,
@@ -280,7 +299,7 @@ const AdminUsuarios = () => {
       
       fetchAdmins(); // Recarregar a lista
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('💥 Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -299,6 +318,8 @@ const AdminUsuarios = () => {
       </div>
     );
   }
+
+  console.log('🎨 Renderizando página com', admins.length, 'administradores');
 
   return (
     <div className="space-y-6">
