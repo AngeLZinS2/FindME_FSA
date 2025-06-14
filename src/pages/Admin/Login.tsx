@@ -26,6 +26,12 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+// Credenciais dos administradores
+const adminCredentials = {
+  'admin@findme.com': 'admin123',
+  'Angelo@findme.com': '13281520'
+};
+
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -39,7 +45,21 @@ const AdminLogin = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    // Check if user exists in admin_users table
+    console.log('Admin login attempt:', data.email);
+    
+    // Verificar credenciais locais primeiro
+    const expectedPassword = adminCredentials[data.email as keyof typeof adminCredentials];
+    
+    if (!expectedPassword || data.password !== expectedPassword) {
+      toast({
+        variant: "destructive",
+        title: "Falha na autenticação",
+        description: "Email ou senha incorretos",
+      });
+      return;
+    }
+
+    // Verificar se usuário existe na tabela admin_users
     const { data: adminUser, error } = await supabase
       .from('admin_users')
       .select('*')
@@ -47,26 +67,29 @@ const AdminLogin = () => {
       .eq('status', 'active')
       .single();
 
-    if (adminUser && data.password === 'admin123') { // Simple password check for demo
-      localStorage.setItem("adminUser", JSON.stringify({ 
-        email: adminUser.email, 
-        name: adminUser.name,
-        role: adminUser.role 
-      }));
-      
-      toast({
-        title: "Login bem-sucedido",
-        description: `Bem-vindo(a), ${adminUser.name}!`,
-      });
-      
-      navigate("/admin/dashboard");
-    } else {
+    if (error || !adminUser) {
+      console.error('Admin user not found:', error);
       toast({
         variant: "destructive",
         title: "Falha na autenticação",
-        description: "Email ou senha incorretos",
+        description: "Usuário administrador não encontrado ou inativo",
       });
+      return;
     }
+
+    // Login bem-sucedido
+    localStorage.setItem("adminUser", JSON.stringify({ 
+      email: adminUser.email, 
+      name: adminUser.name,
+      role: adminUser.role 
+    }));
+    
+    toast({
+      title: "Login bem-sucedido",
+      description: `Bem-vindo(a), ${adminUser.name}!`,
+    });
+    
+    navigate("/admin/dashboard");
   };
 
   return (
@@ -90,7 +113,7 @@ const AdminLogin = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin@findme.com" {...field} />
+                      <Input placeholder="admin@findme.com ou Angelo@findme.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -116,6 +139,12 @@ const AdminLogin = () => {
               </Button>
             </form>
           </Form>
+
+          <div className="text-xs text-muted-foreground text-center">
+            <p>Credenciais válidas:</p>
+            <p>admin@findme.com - admin123</p>
+            <p>Angelo@findme.com - 13281520</p>
+          </div>
         </div>
       </div>
     </div>
