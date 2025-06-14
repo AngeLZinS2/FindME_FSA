@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User, UserPlus, Edit, Trash2, Check, X } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 // Schema de validação para o formulário de usuário
 const usuarioSchema = z.object({
@@ -48,17 +49,20 @@ const usuarioSchema = z.object({
 
 type UsuarioFormValues = z.infer<typeof usuarioSchema>;
 
-// Dados mockados dos administradores
-const initialAdmins = [
-  { id: 1, nome: "Administrador Principal", email: "admin@findme.com", cargo: "Administrador Geral", status: "Ativo" },
-  { id: 2, nome: "Fernanda Souza", email: "fernanda@findme.com", cargo: "Moderador de Eventos", status: "Ativo" },
-  { id: 3, nome: "Carlos Eduardo", email: "carlos@findme.com", cargo: "Analista de Conteúdo", status: "Inativo" },
-];
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+}
 
 const AdminUsuarios = () => {
-  const [admins, setAdmins] = useState(initialAdmins);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingAdmin, setEditingAdmin] = useState<typeof initialAdmins[0] | null>(null);
+  const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
   
   const { toast } = useToast();
 
@@ -72,13 +76,49 @@ const AdminUsuarios = () => {
     },
   });
 
-  const openEditDialog = (admin: typeof initialAdmins[0]) => {
+  // Buscar administradores do banco de dados
+  const fetchAdmins = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar administradores:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar os administradores.",
+        });
+        return;
+      }
+
+      setAdmins(data || []);
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro inesperado ao carregar administradores.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  const openEditDialog = (admin: AdminUser) => {
     setEditingAdmin(admin);
     form.reset({
-      nome: admin.nome,
+      nome: admin.name,
       email: admin.email,
       senha: "", // Não preenchemos a senha por segurança
-      cargo: admin.cargo,
+      cargo: admin.role,
     });
     setIsDialogOpen(true);
   };
@@ -94,77 +134,172 @@ const AdminUsuarios = () => {
     setIsDialogOpen(true);
   };
 
-  const onSubmit = (data: UsuarioFormValues) => {
-    if (editingAdmin) {
-      // Editar administrador existente
-      setAdmins(
-        admins.map((admin) =>
-          admin.id === editingAdmin.id
-            ? { 
-                ...admin, 
-                nome: data.nome, 
-                email: data.email, 
-                cargo: data.cargo 
-              }
-            : admin
-        )
-      );
+  const onSubmit = async (data: UsuarioFormValues) => {
+    try {
+      if (editingAdmin) {
+        // Editar administrador existente
+        const updateData: any = {
+          name: data.nome,
+          email: data.email,
+          role: data.cargo,
+        };
+
+        // Se uma nova senha foi fornecida, incluir o hash
+        if (data.senha.trim()) {
+          // Usar a função do PostgreSQL para hash da senha
+          const { error: updateError } = await supabase.rpc('update_admin_password', {
+            admin_id: editingAdmin.id,
+            new_password: data.senha,
+            update_data: updateData
+          });
+
+          if (updateError) {
+            console.error('Erro ao atualizar administrador:', updateError);
+            toast({
+              variant: "destructive",
+              title: "Erro",
+              description: "Não foi possível atualizar o administrador.",
+            });
+            return;
+          }
+        } else {
+          // Atualizar apenas os dados básicos
+          const { error: updateError } = await supabase
+            .from('admin_users')
+            .update(updateData)
+            .eq('id', editingAdmin.id);
+
+          if (updateError) {
+            console.error('Erro ao atualizar administrador:', updateError);
+            toast({
+              variant: "destructive",
+              title: "Erro",
+              description: "Não foi possível atualizar o administrador.",
+            });
+            return;
+          }
+        }
+        
+        toast({
+          title: "Usuário atualizado",
+          description: `O perfil de ${data.nome} foi atualizado com sucesso.`,
+        });
+      } else {
+        // Adicionar novo administrador
+        const { error: insertError } = await supabase.rpc('create_admin_user', {
+          admin_email: data.email,
+          admin_name: data.nome,
+          admin_role: data.cargo,
+          admin_password: data.senha
+        });
+
+        if (insertError) {
+          console.error('Erro ao criar administrador:', insertError);
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Não foi possível criar o administrador. Verifique se o email já não está em uso.",
+          });
+          return;
+        }
+        
+        toast({
+          title: "Administrador criado",
+          description: `${data.nome} foi adicionado como administrador.`,
+        });
+      }
       
+      setIsDialogOpen(false);
+      fetchAdmins(); // Recarregar a lista
+    } catch (error) {
+      console.error('Erro inesperado:', error);
       toast({
-        title: "Usuário atualizado",
-        description: `O perfil de ${data.nome} foi atualizado com sucesso.`,
-      });
-    } else {
-      // Adicionar novo administrador
-      const newAdmin = {
-        id: admins.length > 0 ? Math.max(...admins.map((a) => a.id)) + 1 : 1,
-        nome: data.nome,
-        email: data.email,
-        cargo: data.cargo,
-        status: "Ativo",
-      };
-      
-      setAdmins([...admins, newAdmin]);
-      
-      toast({
-        title: "Administrador criado",
-        description: `${data.nome} foi adicionado como administrador.`,
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro inesperado ao processar a solicitação.",
       });
     }
-    
-    setIsDialogOpen(false);
   };
 
-  const deleteAdmin = (id: number) => {
-    setAdmins(admins.filter((admin) => admin.id !== id));
-    
-    toast({
-      title: "Administrador removido",
-      description: "O administrador foi removido do sistema.",
-      variant: "destructive",
-    });
+  const deleteAdmin = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('admin_users')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao excluir administrador:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível excluir o administrador.",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Administrador removido",
+        description: "O administrador foi removido do sistema.",
+        variant: "destructive",
+      });
+      
+      fetchAdmins(); // Recarregar a lista
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro inesperado ao excluir administrador.",
+      });
+    }
   };
 
-  const toggleStatus = (id: number) => {
-    setAdmins(
-      admins.map((admin) =>
-        admin.id === id
-          ? { 
-              ...admin, 
-              status: admin.status === "Ativo" ? "Inativo" : "Ativo" 
-            }
-          : admin
-      )
+  const toggleStatus = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === "active" ? "inactive" : "active";
+      
+      const { error } = await supabase
+        .from('admin_users')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao alterar status:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível alterar o status do administrador.",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Status alterado",
+        description: `O administrador agora está ${newStatus === "active" ? "Ativo" : "Inativo"}.`,
+      });
+      
+      fetchAdmins(); // Recarregar a lista
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro inesperado ao alterar status.",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Carregando administradores...</p>
+        </div>
+      </div>
     );
-    
-    const admin = admins.find((a) => a.id === id);
-    const newStatus = admin?.status === "Ativo" ? "Inativo" : "Ativo";
-    
-    toast({
-      title: "Status alterado",
-      description: `O administrador agora está ${newStatus}.`,
-    });
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -286,16 +421,16 @@ const AdminUsuarios = () => {
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                         <User className="h-5 w-5" />
                       </div>
-                      <div>{admin.nome}</div>
+                      <div>{admin.name}</div>
                     </div>
                   </td>
                   <td className="px-4 py-3">{admin.email}</td>
-                  <td className="px-4 py-3">{admin.cargo}</td>
+                  <td className="px-4 py-3">{admin.role}</td>
                   <td className="px-4 py-3">
                     <Badge 
-                      variant={admin.status === "Ativo" ? "default" : "secondary"}
+                      variant={admin.status === "active" ? "default" : "secondary"}
                     >
-                      {admin.status}
+                      {admin.status === "active" ? "Ativo" : "Inativo"}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -310,17 +445,17 @@ const AdminUsuarios = () => {
                       </Button>
                       
                       <Button
-                        variant={admin.status === "Ativo" ? "destructive" : "outline"}
+                        variant={admin.status === "active" ? "destructive" : "outline"}
                         size="sm"
-                        onClick={() => toggleStatus(admin.id)}
+                        onClick={() => toggleStatus(admin.id, admin.status)}
                       >
-                        {admin.status === "Ativo" ? (
+                        {admin.status === "active" ? (
                           <X className="h-4 w-4" />
                         ) : (
                           <Check className="h-4 w-4" />
                         )}
                         <span className="sr-only">
-                          {admin.status === "Ativo" ? "Desativar" : "Ativar"}
+                          {admin.status === "active" ? "Desativar" : "Ativar"}
                         </span>
                       </Button>
                       
@@ -338,7 +473,7 @@ const AdminUsuarios = () => {
                             </AlertDialogTitle>
                             <AlertDialogDescription>
                               Tem certeza que deseja excluir permanentemente o administrador{" "}
-                              <strong>{admin.nome}</strong>? Esta ação não pode ser desfeita.
+                              <strong>{admin.name}</strong>? Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -360,6 +495,18 @@ const AdminUsuarios = () => {
           </table>
         </div>
       </div>
+
+      {admins.length === 0 && (
+        <div className="text-center py-8">
+          <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium text-muted-foreground mb-2">
+            Nenhum administrador encontrado
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Adicione o primeiro administrador ao sistema.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
