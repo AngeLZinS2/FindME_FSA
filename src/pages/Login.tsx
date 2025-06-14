@@ -41,33 +41,41 @@ const Login = () => {
     },
   });
 
-  // Redirect if user is already logged in
+  // Redirect if user is already logged in - only when not loading
   useEffect(() => {
-    if (user && !loading) {
+    if (!loading && user) {
       console.log('User is already logged in, redirecting to profile');
-      navigate("/perfil");
+      navigate("/perfil", { replace: true });
     }
   }, [user, loading, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
-    const { error } = await signIn(data.email, data.password);
+    try {
+      const { error } = await signIn(data.email, data.password);
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Falha na autenticação",
+          description: error.message || "Email ou senha incorretos",
+        });
+      } else {
+        toast({
+          title: "Login bem-sucedido",
+          description: "Bem-vindo de volta!",
+        });
+        // Navigation will be handled by the useEffect hook when user state updates
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Falha na autenticação",
-        description: error.message || "Email ou senha incorretos",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro durante o login. Tente novamente.",
       });
-    } else {
-      toast({
-        title: "Login bem-sucedido",
-        description: "Bem-vindo de volta!",
-      });
-      // Navigation will be handled by the useEffect hook when user state updates
     }
   };
 
-  // Show loading while checking authentication state
+  // Show loading only initially while checking authentication state
   if (loading) {
     return (
       <div className="container mx-auto py-12">
@@ -78,9 +86,15 @@ const Login = () => {
     );
   }
 
-  // Don't render the form if user is already logged in
+  // If user is authenticated, don't render anything (useEffect will handle redirect)
   if (user) {
-    return null;
+    return (
+      <div className="container mx-auto py-12">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
