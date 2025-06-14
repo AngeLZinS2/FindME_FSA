@@ -41,13 +41,13 @@ const Login = () => {
     },
   });
 
-  // Redirect if user is already logged in
+  // Simple redirect logic
   useEffect(() => {
-    if (user && !loading) {
-      console.log('User is already logged in, redirecting to profile');
+    if (user) {
+      console.log('User is logged in, redirecting to profile');
       navigate("/perfil", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
@@ -64,7 +64,6 @@ const Login = () => {
           title: "Login bem-sucedido",
           description: "Bem-vindo de volta!",
         });
-        // Navigation will be handled by the useEffect hook when user state updates
       }
     } catch (error) {
       toast({
@@ -75,7 +74,7 @@ const Login = () => {
     }
   };
 
-  // Show loading spinner while checking authentication
+  // Show loading only when actually loading
   if (loading) {
     return (
       <div className="container mx-auto py-12">
@@ -84,11 +83,6 @@ const Login = () => {
         </div>
       </div>
     );
-  }
-
-  // Don't render login form if user is already authenticated
-  if (user) {
-    return null;
   }
 
   return (

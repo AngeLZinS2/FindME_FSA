@@ -47,12 +47,8 @@ export const useSupabaseAuth = () => {
                 phone: userProfile.phone,
                 city: userProfile.city,
               });
-            } else if (error?.code === 'PGRST116') {
-              // User doesn't exist in our users table - this is normal for first login
-              console.log('User profile not found - will need to be created');
-              setUser(null);
             } else {
-              console.error('Error fetching user profile:', error);
+              console.log('User profile not found or error:', error);
               setUser(null);
             }
           } catch (error) {
@@ -76,10 +72,13 @@ export const useSupabaseAuth = () => {
         if (error) {
           console.error('Error getting session:', error);
         }
-        // The onAuthStateChange will handle the session
+        // The onAuthStateChange will handle the session processing
+        // Just make sure we set loading to false if no session
+        if (!session && mounted) {
+          setLoading(false);
+        }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
-      } finally {
         if (mounted) {
           setLoading(false);
         }
