@@ -41,9 +41,9 @@ const Login = () => {
     },
   });
 
-  // Redirect if user is already logged in - only when not loading
+  // Redirect if user is already logged in
   useEffect(() => {
-    if (!loading && user) {
+    if (user && !loading) {
       console.log('User is already logged in, redirecting to profile');
       navigate("/perfil", { replace: true });
     }
@@ -75,7 +75,7 @@ const Login = () => {
     }
   };
 
-  // Show loading only initially while checking authentication state
+  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <div className="container mx-auto py-12">
@@ -86,15 +86,9 @@ const Login = () => {
     );
   }
 
-  // If user is authenticated, don't render anything (useEffect will handle redirect)
+  // Don't render login form if user is already authenticated
   if (user) {
-    return (
-      <div className="container mx-auto py-12">
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

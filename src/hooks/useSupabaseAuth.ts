@@ -47,37 +47,17 @@ export const useSupabaseAuth = () => {
                 phone: userProfile.phone,
                 city: userProfile.city,
               });
+            } else if (error?.code === 'PGRST116') {
+              // User doesn't exist in our users table - this is normal for first login
+              console.log('User profile not found - will need to be created');
+              setUser(null);
             } else {
               console.error('Error fetching user profile:', error);
-              // If user doesn't exist in our users table, create a basic profile
-              if (error?.code === 'PGRST116' && session.user.email) {
-                console.log('Creating user profile for authenticated user');
-                const { data: newProfile, error: createError } = await supabase
-                  .from('users')
-                  .insert({
-                    email: session.user.email,
-                    name: session.user.email.split('@')[0], // Use email prefix as default name
-                    user_type: 'participant',
-                  })
-                  .select()
-                  .single();
-
-                if (newProfile && !createError && mounted) {
-                  setUser({
-                    id: newProfile.id,
-                    email: newProfile.email,
-                    name: newProfile.name,
-                    userType: newProfile.user_type,
-                    phone: newProfile.phone,
-                    city: newProfile.city,
-                  });
-                } else {
-                  console.error('Error creating user profile:', createError);
-                }
-              }
+              setUser(null);
             }
           } catch (error) {
             console.error('Error in auth state change:', error);
+            setUser(null);
           }
         } else {
           setUser(null);
