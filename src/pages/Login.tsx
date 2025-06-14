@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -32,6 +32,7 @@ const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signIn, loading, user } = useSupabaseAuth();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -41,13 +42,14 @@ const Login = () => {
     },
   });
 
-  // Redirect authenticated users only once when user state is stable
+  // Redirect authenticated users only once
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && !hasRedirected) {
       console.log('User authenticated, navigating to profile');
+      setHasRedirected(true);
       navigate("/perfil", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, hasRedirected]);
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
@@ -68,7 +70,6 @@ const Login = () => {
           title: "Login bem-sucedido",
           description: "Bem-vindo de volta!",
         });
-        // O useEffect vai gerenciar o redirecionamento
       }
     } catch (error) {
       console.error('Login exception:', error);
@@ -91,8 +92,8 @@ const Login = () => {
     );
   }
 
-  // Don't render the form if user is authenticated
-  if (user) {
+  // Don't render the form if user is authenticated and redirect is in progress
+  if (user && hasRedirected) {
     return (
       <div className="container mx-auto py-12">
         <div className="flex justify-center">
@@ -122,9 +123,15 @@ const Login = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel htmlFor="login-email">Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="seu@email.com" {...field} />
+                        <Input 
+                          id="login-email"
+                          name="email"
+                          type="email"
+                          placeholder="seu@email.com" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,9 +143,15 @@ const Login = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Senha</FormLabel>
+                      <FormLabel htmlFor="login-password">Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••" {...field} />
+                        <Input 
+                          id="login-password"
+                          name="password"
+                          type="password" 
+                          placeholder="••••••" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -29,7 +29,6 @@ export const useSupabaseAuth = () => {
       
       if (session?.user) {
         try {
-          // Use a consulta correta para buscar o perfil do usuário
           const { data: userProfile, error } = await supabase
             .from('users')
             .select('*')
@@ -48,8 +47,7 @@ export const useSupabaseAuth = () => {
             console.log('Setting user profile:', authUser);
             setUser(authUser);
           } else {
-            console.log('User profile not found, error:', error);
-            // Se não encontrar o perfil, ainda assim define o usuário básico
+            console.log('User profile not found, creating basic user');
             const basicUser: AuthUser = {
               id: session.user.id,
               email: session.user.email || '',
@@ -60,7 +58,6 @@ export const useSupabaseAuth = () => {
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
-          // Em caso de erro, define usuário básico
           const basicUser: AuthUser = {
             id: session.user.id,
             email: session.user.email || '',
@@ -81,7 +78,7 @@ export const useSupabaseAuth = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session only once
+    // Check for existing session
     const checkInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -125,7 +122,6 @@ export const useSupabaseAuth = () => {
       });
 
       if (data.user && !error) {
-        // Create user profile in our users table
         const { error: profileError } = await supabase
           .from('users')
           .insert({

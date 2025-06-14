@@ -95,9 +95,14 @@ const Register = () => {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome completo</FormLabel>
+                      <FormLabel htmlFor="register-name">Nome completo</FormLabel>
                       <FormControl>
-                        <Input placeholder="Seu nome" {...field} />
+                        <Input 
+                          id="register-name"
+                          name="name"
+                          placeholder="Seu nome" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -109,9 +114,15 @@ const Register = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel htmlFor="register-email">Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="seu@email.com" {...field} />
+                        <Input 
+                          id="register-email"
+                          name="email"
+                          type="email"
+                          placeholder="seu@email.com" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -123,9 +134,15 @@ const Register = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Senha</FormLabel>
+                      <FormLabel htmlFor="register-password">Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••" {...field} />
+                        <Input 
+                          id="register-password"
+                          name="password"
+                          type="password" 
+                          placeholder="••••••" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -137,9 +154,15 @@ const Register = () => {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirme a senha</FormLabel>
+                      <FormLabel htmlFor="register-confirm-password">Confirme a senha</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••" {...field} />
+                        <Input 
+                          id="register-confirm-password"
+                          name="confirmPassword"
+                          type="password" 
+                          placeholder="••••••" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -151,10 +174,10 @@ const Register = () => {
                   name="userType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tipo de conta</FormLabel>
+                      <FormLabel htmlFor="register-user-type">Tipo de conta</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger id="register-user-type" name="userType">
                             <SelectValue placeholder="Selecione o tipo de conta" />
                           </SelectTrigger>
                         </FormControl>
