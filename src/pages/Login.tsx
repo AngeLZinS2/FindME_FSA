@@ -42,10 +42,10 @@ const Login = () => {
     },
   });
 
-  // Apenas redirecionar se usuário está autenticado após login bem-sucedido
+  // Redirecionar quando usuário estiver autenticado
   useEffect(() => {
     if (user && !loading && !isSubmitting) {
-      console.log('User authenticated after login, redirecting to profile');
+      console.log('User authenticated, redirecting to profile');
       navigate("/perfil", { replace: true });
     }
   }, [user, loading, navigate, isSubmitting]);
@@ -72,7 +72,6 @@ const Login = () => {
           title: "Login bem-sucedido",
           description: "Bem-vindo de volta!",
         });
-        // O redirecionamento acontecerá via useEffect quando user for definido
       }
     } catch (error) {
       console.error('Login exception:', error);
@@ -86,18 +85,7 @@ const Login = () => {
     }
   };
 
-  // Mostrar loading apenas se realmente necessário
-  if (loading) {
-    return (
-      <div className="container mx-auto py-12">
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Não renderizar se usuário já está autenticado
+  // Se usuário já está autenticado, redirecionar
   if (user) {
     return null;
   }
