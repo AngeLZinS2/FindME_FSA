@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -31,7 +31,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn, loading } = useSupabaseAuth();
+  const { signIn, loading, user } = useSupabaseAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -40,6 +40,14 @@ const Login = () => {
       password: "",
     },
   });
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      console.log('User is already logged in, redirecting to profile');
+      navigate("/perfil");
+    }
+  }, [user, loading, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     const { error } = await signIn(data.email, data.password);
@@ -55,9 +63,25 @@ const Login = () => {
         title: "Login bem-sucedido",
         description: "Bem-vindo de volta!",
       });
-      navigate("/perfil");
+      // Navigation will be handled by the useEffect hook when user state updates
     }
   };
+
+  // Show loading while checking authentication state
+  if (loading) {
+    return (
+      <div className="container mx-auto py-12">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is already logged in
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto py-12">
