@@ -32,7 +32,7 @@ const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signIn, loading, user } = useSupabaseAuth();
-  const [hasRedirected, setHasRedirected] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -42,17 +42,19 @@ const Login = () => {
     },
   });
 
-  // Redirect authenticated users only once
+  // Simples redirecionamento sem loops
   useEffect(() => {
-    if (user && !loading && !hasRedirected) {
-      console.log('User authenticated, navigating to profile');
-      setHasRedirected(true);
+    if (user && !loading && !isSubmitting) {
+      console.log('User authenticated, redirecting to profile');
       navigate("/perfil", { replace: true });
     }
-  }, [user, loading, navigate, hasRedirected]);
+  }, [user, loading, navigate, isSubmitting]);
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (isSubmitting) return;
+    
     try {
+      setIsSubmitting(true);
       console.log('Attempting login for:', data.email);
       
       const { error } = await signIn(data.email, data.password);
@@ -70,6 +72,7 @@ const Login = () => {
           title: "Login bem-sucedido",
           description: "Bem-vindo de volta!",
         });
+        // O redirecionamento acontecerá via useEffect quando user for definido
       }
     } catch (error) {
       console.error('Login exception:', error);
@@ -78,11 +81,13 @@ const Login = () => {
         title: "Erro inesperado",
         description: "Ocorreu um erro durante o login. Tente novamente.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Show loading while checking authentication
-  if (loading) {
+  // Show loading somente quando realmente necessário
+  if (loading && !user) {
     return (
       <div className="container mx-auto py-12">
         <div className="flex justify-center">
@@ -92,17 +97,9 @@ const Login = () => {
     );
   }
 
-  // Don't render the form if user is authenticated and redirect is in progress
-  if (user && hasRedirected) {
-    return (
-      <div className="container mx-auto py-12">
-        <div className="flex justify-center">
-          <div className="text-center">
-            <p>Redirecionando...</p>
-          </div>
-        </div>
-      </div>
-    );
+  // Não renderizar se usuário já está autenticado
+  if (user) {
+    return null;
   }
 
   return (
@@ -158,8 +155,13 @@ const Login = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  <LogIn className="mr-2 h-4 w-4" /> Entrar
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading || isSubmitting}
+                >
+                  <LogIn className="mr-2 h-4 w-4" /> 
+                  {isSubmitting ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
             </Form>

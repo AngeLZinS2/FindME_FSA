@@ -78,7 +78,7 @@ export const useSupabaseAuth = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session
+    // Check for existing session ONLY ONCE
     const checkInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -149,6 +149,10 @@ export const useSupabaseAuth = () => {
     try {
       setLoading(true);
       
+      // Limpar qualquer estado anterior
+      setUser(null);
+      setSession(null);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -167,12 +171,11 @@ export const useSupabaseAuth = () => {
     try {
       setLoading(true);
       
-      const { error } = await supabase.auth.signOut();
+      // Limpar estado primeiro
+      setUser(null);
+      setSession(null);
       
-      if (!error) {
-        setUser(null);
-        setSession(null);
-      }
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       return { error };
     } catch (error) {
