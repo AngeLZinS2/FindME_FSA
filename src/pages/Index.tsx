@@ -21,23 +21,15 @@ const Home = () => {
     <div>
       {/* Hero Section */}
       <section className="bg-accent/50 py-16 md:py-24 relative overflow-hidden">
-        {/* Animated Background Elements */}
+        {/* Animated Lines Background */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Floating event icons */}
-          <div className="absolute top-20 left-10 text-4xl animate-bounce opacity-20" style={{ animationDelay: '0s', animationDuration: '3s' }}>🎪</div>
-          <div className="absolute top-32 right-20 text-3xl animate-bounce opacity-20" style={{ animationDelay: '1s', animationDuration: '4s' }}>🎭</div>
-          <div className="absolute bottom-32 left-20 text-3xl animate-bounce opacity-20" style={{ animationDelay: '2s', animationDuration: '3.5s' }}>🎪</div>
-          <div className="absolute bottom-20 right-32 text-4xl animate-bounce opacity-20" style={{ animationDelay: '0.5s', animationDuration: '3.2s' }}>🎨</div>
-          <div className="absolute top-1/2 left-1/4 text-2xl animate-bounce opacity-15" style={{ animationDelay: '1.5s', animationDuration: '4.5s' }}>🎵</div>
-          <div className="absolute top-1/3 right-1/3 text-3xl animate-bounce opacity-15" style={{ animationDelay: '2.5s', animationDuration: '3.8s' }}>⚽</div>
-          
-          {/* Pulsing circles */}
-          <div className="absolute top-16 left-1/3 w-24 h-24 bg-findme-accent/10 rounded-full animate-ping opacity-30" style={{ animationDuration: '4s' }}></div>
-          <div className="absolute bottom-24 right-1/4 w-32 h-32 bg-primary/10 rounded-full animate-ping opacity-20" style={{ animationDelay: '2s', animationDuration: '5s' }}></div>
-          <div className="absolute top-1/2 right-10 w-20 h-20 bg-findme-accent/15 rounded-full animate-ping opacity-25" style={{ animationDelay: '1s', animationDuration: '3.5s' }}></div>
-          
-          {/* Moving gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse" style={{ animationDuration: '6s' }}></div>
+          {/* Diagonal animated lines */}
+          <div className="animated-line line-1"></div>
+          <div className="animated-line line-2"></div>
+          <div className="animated-line line-3"></div>
+          <div className="animated-line line-4"></div>
+          <div className="animated-line line-5"></div>
+          <div className="animated-line line-6"></div>
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
