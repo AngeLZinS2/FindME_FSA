@@ -153,9 +153,13 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Título do Evento</FormLabel>
+                <FormLabel htmlFor="event-title">Título do Evento</FormLabel>
                 <FormControl>
-                  <Input placeholder="Digite o título do evento" {...field} />
+                  <Input 
+                    id="event-title"
+                    placeholder="Digite o título do evento" 
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -167,9 +171,10 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Descrição</FormLabel>
+                <FormLabel htmlFor="event-description">Descrição</FormLabel>
                 <FormControl>
                   <Textarea 
+                    id="event-description"
                     placeholder="Descreva os detalhes do seu evento" 
                     className="min-h-[120px]"
                     {...field} 
@@ -198,9 +203,13 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data</FormLabel>
+                  <FormLabel htmlFor="event-date">Data</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input 
+                      id="event-date"
+                      type="date" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -212,9 +221,13 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
               name="time"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Horário</FormLabel>
+                  <FormLabel htmlFor="event-time">Horário</FormLabel>
                   <FormControl>
-                    <Input type="time" {...field} />
+                    <Input 
+                      id="event-time"
+                      type="time" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -227,9 +240,13 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
             name="location"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Local</FormLabel>
+                <FormLabel htmlFor="event-location">Local</FormLabel>
                 <FormControl>
-                  <Input placeholder="Endereço do evento" {...field} />
+                  <Input 
+                    id="event-location"
+                    placeholder="Endereço do evento" 
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -241,10 +258,10 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Categoria</FormLabel>
+                <FormLabel htmlFor="event-category">Categoria</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger id="event-category">
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
                   </FormControl>
@@ -266,7 +283,6 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
             control={form.control}
             name="socialMedia"
             render={({ field }) => {
-              // Ensure the value is properly typed for SocialMediaInputs
               const typedValue: SocialMediaLink[] = (field.value || []).map(item => ({
                 id: item.id || `social-${Date.now()}-${Math.random()}`,
                 platform: item.platform || '',
@@ -289,9 +305,15 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
               name="capacity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Capacidade</FormLabel>
+                  <FormLabel htmlFor="event-capacity">Capacidade</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" placeholder="Número de participantes" {...field} />
+                    <Input 
+                      id="event-capacity"
+                      type="number" 
+                      min="1" 
+                      placeholder="Número de participantes" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -303,9 +325,10 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Preço (opcional)</FormLabel>
+                  <FormLabel htmlFor="event-price">Preço (opcional)</FormLabel>
                   <FormControl>
                     <Input 
+                      id="event-price"
                       type="number" 
                       min="0" 
                       step="0.01"

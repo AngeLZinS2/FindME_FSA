@@ -27,7 +27,6 @@ const ImageUpload = ({ onChange, value, label }: ImageUploadProps) => {
     
     if (!file) return;
     
-    // Validate file size
     if (!isValidFileSize(file)) {
       toast({
         title: "Arquivo muito grande",
@@ -37,7 +36,6 @@ const ImageUpload = ({ onChange, value, label }: ImageUploadProps) => {
       return;
     }
     
-    // Validate file type
     if (!isValidFileType(file)) {
       toast({
         title: "Formato não suportado",
@@ -50,7 +48,6 @@ const ImageUpload = ({ onChange, value, label }: ImageUploadProps) => {
     try {
       setIsUploading(true);
       
-      // Convert file to base64
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
@@ -81,14 +78,14 @@ const ImageUpload = ({ onChange, value, label }: ImageUploadProps) => {
 
   return (
     <FormItem>
-      <FormLabel>{label}</FormLabel>
+      <FormLabel htmlFor="event-image-input">{label}</FormLabel>
       <FormControl>
         <div className="space-y-2">
           {value ? (
             <div className="relative">
               <img 
                 src={value} 
-                alt="Preview" 
+                alt="Preview da imagem do evento" 
                 className="w-full h-48 object-contain rounded-md bg-muted/50 border"
               />
               <Button
@@ -97,6 +94,7 @@ const ImageUpload = ({ onChange, value, label }: ImageUploadProps) => {
                 size="icon"
                 className="absolute top-2 right-2"
                 onClick={handleRemoveImage}
+                aria-label="Remover imagem"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -117,6 +115,7 @@ const ImageUpload = ({ onChange, value, label }: ImageUploadProps) => {
                 disabled={isUploading}
                 className="hidden"
                 id="event-image-input"
+                name="event-image"
               />
               <Button
                 type="button"

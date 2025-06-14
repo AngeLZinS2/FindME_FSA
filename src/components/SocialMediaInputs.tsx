@@ -66,6 +66,7 @@ const SocialMediaInputs = ({ value, onChange, label }: SocialMediaInputsProps) =
         <div className="space-y-3">
           {value.map((item) => {
             const Icon = getPlatformIcon(item.platform);
+            const platformLabel = PLATFORMS.find(p => p.value === item.platform)?.label || item.platform;
             
             return (
               <div key={item.id} className="flex items-center space-x-2">
@@ -73,8 +74,10 @@ const SocialMediaInputs = ({ value, onChange, label }: SocialMediaInputsProps) =
                   <Icon className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <Input
+                  id={`social-media-${item.id}`}
+                  name={`social-media-${item.id}`}
                   type="url"
-                  placeholder={`URL ${PLATFORMS.find(p => p.value === item.platform)?.label}`}
+                  placeholder={`URL ${platformLabel}`}
                   value={item.url}
                   onChange={(e) => updateSocialMedia(item.id, "url", e.target.value)}
                   className="flex-1"
@@ -84,6 +87,7 @@ const SocialMediaInputs = ({ value, onChange, label }: SocialMediaInputsProps) =
                   variant="ghost"
                   size="icon"
                   onClick={() => removeSocialMedia(item.id)}
+                  aria-label={`Remover ${platformLabel}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
