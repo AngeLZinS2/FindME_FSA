@@ -41,13 +41,13 @@ const Login = () => {
     },
   });
 
-  // Only redirect if user exists and is properly authenticated
+  // Redirect authenticated users
   useEffect(() => {
-    if (user && user.email) {
-      console.log('User authenticated, redirecting to profile');
+    if (user && !loading) {
+      console.log('User is authenticated, redirecting to profile');
       navigate("/perfil", { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
@@ -63,10 +63,12 @@ const Login = () => {
           description: error.message || "Email ou senha incorretos",
         });
       } else {
+        console.log('Login successful, showing success toast');
         toast({
           title: "Login bem-sucedido",
           description: "Bem-vindo de volta!",
         });
+        // The useEffect will handle redirection when user state updates
       }
     } catch (error) {
       console.error('Login exception:', error);
@@ -78,7 +80,7 @@ const Login = () => {
     }
   };
 
-  // Show loading only when authentication is being processed
+  // Don't show anything while checking authentication
   if (loading) {
     return (
       <div className="container mx-auto py-12">
@@ -87,6 +89,11 @@ const Login = () => {
         </div>
       </div>
     );
+  }
+
+  // If user is already authenticated, don't show login form
+  if (user) {
+    return null;
   }
 
   return (

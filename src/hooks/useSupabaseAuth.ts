@@ -12,25 +12,6 @@ interface AuthUser {
   city?: string;
 }
 
-// Function to clean up any existing auth state
-const cleanupAuthState = () => {
-  // Clear all auth-related items from localStorage
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      localStorage.removeItem(key);
-    }
-  });
-  
-  // Clear sessionStorage as well
-  if (typeof sessionStorage !== 'undefined') {
-    Object.keys(sessionStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  }
-};
-
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -38,20 +19,6 @@ export const useSupabaseAuth = () => {
 
   useEffect(() => {
     let mounted = true;
-
-    // Clean up any existing problematic auth state first
-    cleanupAuthState();
-
-    // Force sign out any existing session
-    const forceCleanStart = async () => {
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (error) {
-        console.log('No existing session to sign out');
-      }
-    };
-
-    forceCleanStart();
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -62,8 +29,7 @@ export const useSupabaseAuth = () => {
         
         setSession(session);
         
-        if (session?.user && event === 'SIGNED_IN') {
-          // Only fetch user profile after successful sign in
+        if (session?.user) {
           try {
             const { data: userProfile, error } = await supabase
               .from('users')
@@ -72,16 +38,18 @@ export const useSupabaseAuth = () => {
               .single();
             
             if (userProfile && !error && mounted) {
-              setUser({
+              const authUser = {
                 id: userProfile.id,
                 email: userProfile.email,
                 name: userProfile.name,
                 userType: userProfile.user_type,
                 phone: userProfile.phone,
                 city: userProfile.city,
-              });
+              };
+              console.log('Setting user:', authUser);
+              setUser(authUser);
             } else {
-              console.log('User profile not found:', error);
+              console.log('User profile not found or error:', error);
               setUser(null);
             }
           } catch (error) {
@@ -98,10 +66,24 @@ export const useSupabaseAuth = () => {
       }
     );
 
-    // Don't check for existing session - start fresh
-    if (mounted) {
-      setLoading(false);
-    }
+    // Check for existing session
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        // The onAuthStateChange will handle the session update
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        if (mounted && !session) {
+          setLoading(false);
+        }
+      }
+    };
+
+    checkSession();
 
     return () => {
       mounted = false;
@@ -111,9 +93,7 @@ export const useSupabaseAuth = () => {
 
   const signUp = async (email: string, password: string, name: string, userType: string) => {
     try {
-      // Clean up before attempting signup
-      cleanupAuthState();
-      await supabase.auth.signOut({ scope: 'global' });
+      setLoading(true);
       
       const redirectUrl = `${window.location.origin}/`;
       
@@ -144,64 +124,77 @@ export const useSupabaseAuth = () => {
     } catch (error) {
       console.error('Signup error:', error);
       return { data: null, error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Clean up before attempting signin
-      cleanupAuthState();
-      await supabase.auth.signOut({ scope: 'global' });
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      if (error) {
+        console.error('Sign in error:', error);
+      } else {
+        console.log('Sign in successful:', data.user?.email);
+      }
+
       return { data, error };
     } catch (error) {
       console.error('Signin error:', error);
       return { data: null, error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      cleanupAuthState();
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      setLoading(true);
       
-      setUser(null);
-      setSession(null);
+      const { error } = await supabase.auth.signOut();
       
-      // Force page reload to ensure clean state
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 100);
+      if (!error) {
+        setUser(null);
+        setSession(null);
+      }
       
       return { error };
     } catch (error) {
       console.error('Signout error:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateProfile = async (updates: Partial<AuthUser>) => {
     if (!user) return { error: new Error('No user logged in') };
 
-    const { data, error } = await supabase
-      .from('users')
-      .update({
-        name: updates.name,
-        phone: updates.phone,
-        city: updates.city,
-      })
-      .eq('id', user.id);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          name: updates.name,
+          phone: updates.phone,
+          city: updates.city,
+        })
+        .eq('id', user.id);
 
-    if (!error && data) {
-      setUser({ ...user, ...updates });
+      if (!error) {
+        setUser({ ...user, ...updates });
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { data: null, error };
     }
-
-    return { data, error };
   };
 
   return {
