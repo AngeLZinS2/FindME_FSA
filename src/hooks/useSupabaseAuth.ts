@@ -12,6 +12,25 @@ interface AuthUser {
   city?: string;
 }
 
+// Função para limpar completamente o estado de autenticação
+const cleanupAuthState = () => {
+  // Remove todos os dados do Supabase do localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Remove também do sessionStorage se existir
+  if (typeof sessionStorage !== 'undefined') {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  }
+};
+
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -75,31 +94,16 @@ export const useSupabaseAuth = () => {
       }
     };
 
+    // IMPORTANTE: Primeiro limpar qualquer estado anterior
+    cleanupAuthState();
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session ONLY ONCE
-    const checkInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-          if (mounted) setLoading(false);
-          return;
-        }
-        
-        if (session) {
-          await handleAuthStateChange('INITIAL_SESSION', session);
-        } else {
-          if (mounted) setLoading(false);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-        if (mounted) setLoading(false);
-      }
-    };
-
-    checkInitialSession();
+    // NÃO verificar sessão existente automaticamente - apenas definir loading como false
+    if (mounted) {
+      setLoading(false);
+    }
 
     return () => {
       mounted = false;
@@ -110,6 +114,11 @@ export const useSupabaseAuth = () => {
   const signUp = async (email: string, password: string, name: string, userType: string) => {
     try {
       setLoading(true);
+      
+      // Limpar estado antes de registrar
+      cleanupAuthState();
+      setUser(null);
+      setSession(null);
       
       const redirectUrl = `${window.location.origin}/`;
       
@@ -149,7 +158,8 @@ export const useSupabaseAuth = () => {
     try {
       setLoading(true);
       
-      // Limpar qualquer estado anterior
+      // Limpar completamente qualquer estado anterior
+      cleanupAuthState();
       setUser(null);
       setSession(null);
       
@@ -174,6 +184,7 @@ export const useSupabaseAuth = () => {
       // Limpar estado primeiro
       setUser(null);
       setSession(null);
+      cleanupAuthState();
       
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       

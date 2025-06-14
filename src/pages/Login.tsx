@@ -42,10 +42,10 @@ const Login = () => {
     },
   });
 
-  // Simples redirecionamento sem loops
+  // Apenas redirecionar se usuário está autenticado após login bem-sucedido
   useEffect(() => {
     if (user && !loading && !isSubmitting) {
-      console.log('User authenticated, redirecting to profile');
+      console.log('User authenticated after login, redirecting to profile');
       navigate("/perfil", { replace: true });
     }
   }, [user, loading, navigate, isSubmitting]);
@@ -86,8 +86,8 @@ const Login = () => {
     }
   };
 
-  // Show loading somente quando realmente necessário
-  if (loading && !user) {
+  // Mostrar loading apenas se realmente necessário
+  if (loading) {
     return (
       <div className="container mx-auto py-12">
         <div className="flex justify-center">
