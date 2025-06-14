@@ -127,4 +127,46 @@
       opacity: 0.8;
     }
   }
+
+  /* New event-themed animations */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(0, 112, 243, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(0, 112, 243, 0.6);
+    }
+  }
+
+  @keyframes sparkle {
+    0%, 100% {
+      opacity: 0;
+      transform: scale(0);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .float-animation {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .glow-animation {
+    animation: glow-pulse 2s infinite;
+  }
+
+  .sparkle-animation {
+    animation: sparkle 2s infinite;
+  }
 }
