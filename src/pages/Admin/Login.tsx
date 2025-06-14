@@ -26,12 +26,6 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-// Credenciais dos administradores
-const adminCredentials = {
-  'admin@findme.com': 'admin123',
-  'Angelo@findme.com': '13281520'
-};
-
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -47,49 +41,55 @@ const AdminLogin = () => {
   const onSubmit = async (data: LoginFormValues) => {
     console.log('Admin login attempt:', data.email);
     
-    // Verificar credenciais locais primeiro
-    const expectedPassword = adminCredentials[data.email as keyof typeof adminCredentials];
-    
-    if (!expectedPassword || data.password !== expectedPassword) {
+    try {
+      // Verificar credenciais no banco de dados usando a função crypt do PostgreSQL
+      const { data: authResult, error } = await supabase.rpc('verify_admin_login', {
+        input_email: data.email,
+        input_password: data.password
+      });
+
+      if (error) {
+        console.error('Database error:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro no sistema",
+          description: "Erro interno do servidor. Tente novamente.",
+        });
+        return;
+      }
+
+      if (!authResult || authResult.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Falha na autenticação",
+          description: "Email ou senha incorretos",
+        });
+        return;
+      }
+
+      const adminUser = authResult[0];
+
+      // Login bem-sucedido
+      localStorage.setItem("adminUser", JSON.stringify({ 
+        email: adminUser.email, 
+        name: adminUser.name,
+        role: adminUser.role 
+      }));
+      
+      toast({
+        title: "Login bem-sucedido",
+        description: `Bem-vindo(a), ${adminUser.name}!`,
+      });
+      
+      navigate("/admin/dashboard");
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         variant: "destructive",
-        title: "Falha na autenticação",
-        description: "Email ou senha incorretos",
+        title: "Erro no sistema",
+        description: "Erro interno. Tente novamente mais tarde.",
       });
-      return;
     }
-
-    // Verificar se usuário existe na tabela admin_users
-    const { data: adminUser, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('email', data.email)
-      .eq('status', 'active')
-      .single();
-
-    if (error || !adminUser) {
-      console.error('Admin user not found:', error);
-      toast({
-        variant: "destructive",
-        title: "Falha na autenticação",
-        description: "Usuário administrador não encontrado ou inativo",
-      });
-      return;
-    }
-
-    // Login bem-sucedido
-    localStorage.setItem("adminUser", JSON.stringify({ 
-      email: adminUser.email, 
-      name: adminUser.name,
-      role: adminUser.role 
-    }));
-    
-    toast({
-      title: "Login bem-sucedido",
-      description: `Bem-vindo(a), ${adminUser.name}!`,
-    });
-    
-    navigate("/admin/dashboard");
   };
 
   return (
