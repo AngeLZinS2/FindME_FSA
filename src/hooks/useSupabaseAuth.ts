@@ -20,70 +20,89 @@ export const useSupabaseAuth = () => {
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
-        
-        if (!mounted) return;
-        
-        setSession(session);
-        
-        if (session?.user) {
-          try {
-            const { data: userProfile, error } = await supabase
-              .from('users')
-              .select('*')
-              .eq('email', session.user.email)
-              .single();
-            
-            if (userProfile && !error && mounted) {
-              const authUser = {
-                id: userProfile.id,
-                email: userProfile.email,
-                name: userProfile.name,
-                userType: userProfile.user_type,
-                phone: userProfile.phone,
-                city: userProfile.city,
-              };
-              console.log('Setting user:', authUser);
-              setUser(authUser);
-            } else {
-              console.log('User profile not found or error:', error);
-              setUser(null);
-            }
-          } catch (error) {
-            console.error('Error fetching user profile:', error);
-            setUser(null);
+    const handleAuthStateChange = async (event: string, session: Session | null) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
+      if (!mounted) return;
+      
+      setSession(session);
+      
+      if (session?.user) {
+        try {
+          // Use a consulta correta para buscar o perfil do usuário
+          const { data: userProfile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (userProfile && !error && mounted) {
+            const authUser: AuthUser = {
+              id: userProfile.id,
+              email: userProfile.email,
+              name: userProfile.name,
+              userType: userProfile.user_type,
+              phone: userProfile.phone,
+              city: userProfile.city,
+            };
+            console.log('Setting user profile:', authUser);
+            setUser(authUser);
+          } else {
+            console.log('User profile not found, error:', error);
+            // Se não encontrar o perfil, ainda assim define o usuário básico
+            const basicUser: AuthUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email || '',
+              userType: 'attendee',
+            };
+            setUser(basicUser);
           }
-        } else {
-          setUser(null);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          // Em caso de erro, define usuário básico
+          const basicUser: AuthUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.email || '',
+            userType: 'attendee',
+          };
+          setUser(basicUser);
         }
-        
-        if (mounted) {
-          setLoading(false);
-        }
+      } else {
+        setUser(null);
       }
-    );
+      
+      if (mounted) {
+        setLoading(false);
+      }
+    };
 
-    // Check for existing session
-    const checkSession = async () => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
+    // Check for existing session only once
+    const checkInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
+          if (mounted) setLoading(false);
+          return;
         }
-        // The onAuthStateChange will handle the session update
+        
+        if (session) {
+          await handleAuthStateChange('INITIAL_SESSION', session);
+        } else {
+          if (mounted) setLoading(false);
+        }
       } catch (error) {
         console.error('Error checking session:', error);
-      } finally {
-        if (mounted && !session) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
 
-    checkSession();
+    checkInitialSession();
 
     return () => {
       mounted = false;
@@ -110,6 +129,7 @@ export const useSupabaseAuth = () => {
         const { error: profileError } = await supabase
           .from('users')
           .insert({
+            id: data.user.id,
             email,
             name,
             user_type: userType,
@@ -137,12 +157,6 @@ export const useSupabaseAuth = () => {
         email,
         password,
       });
-
-      if (error) {
-        console.error('Sign in error:', error);
-      } else {
-        console.log('Sign in successful:', data.user?.email);
-      }
 
       return { data, error };
     } catch (error) {

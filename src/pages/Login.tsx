@@ -41,10 +41,10 @@ const Login = () => {
     },
   });
 
-  // Redirect authenticated users
+  // Redirect authenticated users only once when user state is stable
   useEffect(() => {
     if (user && !loading) {
-      console.log('User is authenticated, redirecting to profile');
+      console.log('User authenticated, navigating to profile');
       navigate("/perfil", { replace: true });
     }
   }, [user, loading, navigate]);
@@ -63,12 +63,12 @@ const Login = () => {
           description: error.message || "Email ou senha incorretos",
         });
       } else {
-        console.log('Login successful, showing success toast');
+        console.log('Login successful');
         toast({
           title: "Login bem-sucedido",
           description: "Bem-vindo de volta!",
         });
-        // The useEffect will handle redirection when user state updates
+        // O useEffect vai gerenciar o redirecionamento
       }
     } catch (error) {
       console.error('Login exception:', error);
@@ -80,7 +80,7 @@ const Login = () => {
     }
   };
 
-  // Don't show anything while checking authentication
+  // Show loading while checking authentication
   if (loading) {
     return (
       <div className="container mx-auto py-12">
@@ -91,9 +91,17 @@ const Login = () => {
     );
   }
 
-  // If user is already authenticated, don't show login form
+  // Don't render the form if user is authenticated
   if (user) {
-    return null;
+    return (
+      <div className="container mx-auto py-12">
+        <div className="flex justify-center">
+          <div className="text-center">
+            <p>Redirecionando...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
