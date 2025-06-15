@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,15 @@ const EventsPage = () => {
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const [sortOrder, setSortOrder] = useState("date-asc");
   
-  const { events: eventsList } = useEventsList();
+  const { events: eventsList, loading } = useEventsList();
   
+  console.log('🎭 Eventos carregados na página:', eventsList);
+  console.log('⏳ Loading status:', loading);
+  
+  useEffect(() => {
+    console.log('🔄 Página de eventos montada, verificando eventos...');
+  }, []);
+
   const filteredEvents = eventsList.filter((event) => {
     const matchesSearch = 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -98,6 +105,21 @@ const EventsPage = () => {
     <div className="py-12">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
+        
+        {/* Show loading state */}
+        {loading && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Carregando eventos...</p>
+          </div>
+        )}
+        
+        {/* Show debug info in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-3 bg-muted rounded-lg text-sm">
+            <p>Debug: {eventsList.length} eventos carregados</p>
+            <p>Loading: {loading ? 'Sim' : 'Não'}</p>
+          </div>
+        )}
         
         <div className="flex flex-col md:flex-row gap-4 bg-accent/50 p-4 rounded-lg mb-6">
           <div className="relative flex-grow">
@@ -195,7 +217,7 @@ const EventsPage = () => {
           </div>
         )}
         
-        {paginatedEvents.length > 0 ? (
+        {!loading && paginatedEvents.length > 0 ? (
           <>
             <div className="mb-6 flex justify-between items-center">
               <p className="text-muted-foreground">
@@ -263,7 +285,7 @@ const EventsPage = () => {
               </PaginationContent>
             </Pagination>
           </>
-        ) : (
+        ) : !loading ? (
           <div className="text-center py-12">
             <h3 className="text-2xl font-semibold mb-2">Nenhum evento encontrado</h3>
             <p className="text-muted-foreground mb-6">
@@ -273,7 +295,7 @@ const EventsPage = () => {
               Limpar Todos os Filtros
             </Button>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
