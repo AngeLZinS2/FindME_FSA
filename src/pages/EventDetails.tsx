@@ -23,7 +23,7 @@ const EventDetails = () => {
   const { attendeesCount, loading: attendeesLoading } = useEventAttendees(id || '');
 
   const [isParticipating, setIsParticipating] = useState(false);
-  const [checkingParticipation, setCheckingParticipation] = useState(true);
+  const [checkingParticipation, setCheckingParticipation] = useState(false);
   const [participationLoading, setParticipationLoading] = useState(false);
 
   const event = events.find(e => e.id === id);
@@ -32,17 +32,22 @@ const EventDetails = () => {
   useEffect(() => {
     const checkParticipation = async () => {
       if (user && id) {
+        console.log('🔍 [EventDetails] Verificando participação do usuário...');
         setCheckingParticipation(true);
         try {
           const participating = await checkUserParticipation(id, user.id);
+          console.log('✅ [EventDetails] Status de participação:', participating);
           setIsParticipating(participating);
         } catch (e) {
-          console.error("[EventDetails] Erro ao checar participação:", e);
+          console.error("❌ [EventDetails] Erro ao checar participação:", e);
+          setIsParticipating(false);
         } finally {
           setCheckingParticipation(false);
+          console.log('🏁 [EventDetails] Verificação de participação finalizada');
         }
       } else {
         setCheckingParticipation(false);
+        setIsParticipating(false);
       }
     };
     checkParticipation();
@@ -50,25 +55,35 @@ const EventDetails = () => {
 
   const handleParticipation = async () => {
     if (!user) {
-      // Redirecionar para login se não estiver logado
       window.location.href = '/login';
       return;
     }
     if (!id) return;
+    
+    console.log('🎯 [EventDetails] Iniciando ação de participação...', { isParticipating });
     setParticipationLoading(true);
 
     try {
       if (isParticipating) {
+        console.log('🚪 [EventDetails] Saindo do evento...');
         const result = await leaveEvent(id, user.id);
-        if (result.success) setIsParticipating(false);
+        if (result.success) {
+          setIsParticipating(false);
+          console.log('✅ [EventDetails] Saída do evento bem-sucedida');
+        }
       } else {
+        console.log('🎉 [EventDetails] Participando do evento...');
         const result = await joinEvent(id, user.id);
-        if (result.success) setIsParticipating(true);
+        if (result.success) {
+          setIsParticipating(true);
+          console.log('✅ [EventDetails] Participação bem-sucedida');
+        }
       }
     } catch (e) {
-      console.error("[EventDetails] Erro ao participar/cancelar:", e);
+      console.error("❌ [EventDetails] Erro ao participar/cancelar:", e);
     } finally {
       setParticipationLoading(false);
+      console.log('🏁 [EventDetails] Ação de participação finalizada');
     }
   };
 
@@ -98,6 +113,8 @@ const EventDetails = () => {
   const isFull = spotsRemaining <= 0;
 
   const getButtonText = () => {
+    if (checkingParticipation) return "Verificando...";
+    if (participationLoading) return "Carregando...";
     if (!user) return "Fazer login para participar";
     if (isEventPast) return "Evento já realizado";
     if (isFull && !isParticipating) return "Entrar na lista de espera";
@@ -109,6 +126,10 @@ const EventDetails = () => {
     if (!user || isEventPast || (isFull && !isParticipating)) return "outline";
     if (isParticipating) return "destructive";
     return "default";
+  };
+
+  const isButtonDisabled = () => {
+    return checkingParticipation || participationLoading || (isEventPast && !isParticipating);
   };
 
   return (
@@ -257,13 +278,13 @@ const EventDetails = () => {
                   <Button
                     className="w-full"
                     onClick={handleParticipation}
-                    disabled={participationLoading || checkingParticipation || (isEventPast && !isParticipating)}
+                    disabled={isButtonDisabled()}
                     variant={getButtonVariant()}
                   >
-                    {participationLoading || checkingParticipation ? "Carregando..." : getButtonText()}
+                    {getButtonText()}
                   </Button>
 
-                  {user && !isEventPast && !checkingParticipation && (
+                  {user && !isEventPast && !checkingParticipation && !participationLoading && (
                     <p className="text-xs text-muted-foreground text-center">
                       {isParticipating 
                         ? "Clique para cancelar sua participação" 
