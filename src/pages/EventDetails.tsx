@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Calendar, Clock, MapPin, Users, ArrowLeft, ExternalLink } from "lucide-react";
@@ -20,12 +19,13 @@ const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { events } = useEventsList();
   const { user } = useSupabaseAuth();
-  const { joinEvent, leaveEvent, checkUserParticipation, loading: participationLoading } = useEventParticipation();
+  const { joinEvent, leaveEvent, checkUserParticipation } = useEventParticipation();
   const { attendeesCount, loading: attendeesLoading } = useEventAttendees(id || '');
-  
+
   const [isParticipating, setIsParticipating] = useState(false);
   const [checkingParticipation, setCheckingParticipation] = useState(true);
-  
+  const [participationLoading, setParticipationLoading] = useState(false);
+
   const event = events.find(e => e.id === id);
 
   // Verificar se o usuário já está participando
@@ -33,38 +33,45 @@ const EventDetails = () => {
     const checkParticipation = async () => {
       if (user && id) {
         setCheckingParticipation(true);
-        const participating = await checkUserParticipation(id, user.id);
-        setIsParticipating(participating);
-        setCheckingParticipation(false);
+        try {
+          const participating = await checkUserParticipation(id, user.id);
+          setIsParticipating(participating);
+        } catch (e) {
+          console.error("[EventDetails] Erro ao checar participação:", e);
+        } finally {
+          setCheckingParticipation(false);
+        }
       } else {
         setCheckingParticipation(false);
       }
     };
-
     checkParticipation();
   }, [user, id, checkUserParticipation]);
 
   const handleParticipation = async () => {
     if (!user) {
       // Redirecionar para login se não estiver logado
+      window.location.href = '/login';
       return;
     }
-
     if (!id) return;
+    setParticipationLoading(true);
 
-    if (isParticipating) {
-      const result = await leaveEvent(id, user.id);
-      if (result.success) {
-        setIsParticipating(false);
+    try {
+      if (isParticipating) {
+        const result = await leaveEvent(id, user.id);
+        if (result.success) setIsParticipating(false);
+      } else {
+        const result = await joinEvent(id, user.id);
+        if (result.success) setIsParticipating(true);
       }
-    } else {
-      const result = await joinEvent(id, user.id);
-      if (result.success) {
-        setIsParticipating(true);
-      }
+    } catch (e) {
+      console.error("[EventDetails] Erro ao participar/cancelar:", e);
+    } finally {
+      setParticipationLoading(false);
     }
   };
-  
+
   if (!event) {
     return (
       <div className="py-12">
@@ -247,9 +254,9 @@ const EventDetails = () => {
                     <p className="text-2xl font-bold text-green-600">Gratuito</p>
                   </div>
 
-                  <Button 
-                    className="w-full" 
-                    onClick={!user ? () => window.location.href = '/login' : handleParticipation}
+                  <Button
+                    className="w-full"
+                    onClick={handleParticipation}
                     disabled={participationLoading || checkingParticipation || (isEventPast && !isParticipating)}
                     variant={getButtonVariant()}
                   >
