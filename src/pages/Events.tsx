@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Filter, X, AlertCircle } from "lucide-react";
@@ -143,19 +142,34 @@ const EventsPage = () => {
       <div className="py-12">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
-          
           <Alert className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               {error}
             </AlertDescription>
           </Alert>
-          
           <div className="text-center py-12">
             <Button onClick={() => window.location.reload()}>
               Tentar Novamente
             </Button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Renderizar quando não houver eventos disponíveis mesmo após fetch
+  if (!loading && eventsList.length === 0) {
+    return (
+      <div className="py-12">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Não foram encontrados eventos aprovados. Crie um evento ou aguarde a aprovação de eventos.
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     );

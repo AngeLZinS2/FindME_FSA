@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
@@ -26,7 +25,7 @@ export const useSupabaseEvents = () => {
     console.log('🔍 [useSupabaseEvents] Iniciando busca por eventos aprovados...');
     setLoading(true);
     setError(null);
-    
+
     try {
       const { data: events, error: eventsError } = await supabase
         .from('events')
@@ -34,28 +33,30 @@ export const useSupabaseEvents = () => {
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
-      console.log('📊 [useSupabaseEvents] Resultado da busca:', { 
-        count: events?.length || 0, 
+      console.log('📊 [useSupabaseEvents] Resultado da busca:', {
+        rawEvents: events,
+        count: events?.length || 0,
         hasError: !!eventsError,
-        firstEvent: events?.[0]?.title || 'Nenhum'
+        firstEvent: events?.[0]?.title || 'Nenhum',
       });
 
       if (eventsError) {
         console.error('❌ [useSupabaseEvents] Erro ao buscar eventos:', eventsError);
         setError(`Erro ao buscar eventos: ${eventsError.message}`);
         setEvents([]);
+        setLoading(false);
         return;
       }
 
       if (!events || events.length === 0) {
         console.log('📭 [useSupabaseEvents] Nenhum evento aprovado encontrado');
         setEvents([]);
+        setLoading(false);
         return;
       }
 
-      console.log('🔄 [useSupabaseEvents] Formatando eventos...');
       const formattedEvents: EventProps[] = events.map((event) => {
-        let socialMedia: SocialMediaLink[] = [];
+        let socialMedia = [];
         try {
           if (Array.isArray(event.social_media)) {
             socialMedia = event.social_media.map((item: any) => ({
@@ -83,16 +84,15 @@ export const useSupabaseEvents = () => {
           socialMedia,
         };
       });
-      
-      console.log('✅ [useSupabaseEvents] Eventos formatados:', formattedEvents.length);
+
       setEvents(formattedEvents);
-      
+      setLoading(false);
+      console.log('✅ [useSupabaseEvents] Eventos formatados e setados:', formattedEvents.length);
+
     } catch (exception) {
       console.error('💥 [useSupabaseEvents] Exceção:', exception);
       setError(`Erro na conexão: ${exception}`);
       setEvents([]);
-    } finally {
-      console.log('🏁 [useSupabaseEvents] Finalizando busca');
       setLoading(false);
     }
   };
