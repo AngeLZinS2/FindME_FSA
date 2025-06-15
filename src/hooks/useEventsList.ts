@@ -7,8 +7,7 @@ export const useEventsList = () => {
   console.log('🎯 [useEventsList] Status atual:', { 
     eventCount: events.length, 
     loading,
-    hasError: !!error,
-    error: error ? error.substring(0, 100) + '...' : null
+    hasError: !!error
   });
   
   return {
