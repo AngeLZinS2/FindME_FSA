@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
@@ -22,17 +21,34 @@ export const useSupabaseEvents = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = async () => {
-    console.log('🔍 Buscando eventos aprovados...');
+    console.log('🔍 Iniciando busca por eventos...');
     setLoading(true);
     
     try {
+      // Primeiro, vamos ver TODOS os eventos para debug
+      const { data: allEvents, error: allEventsError } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+
+      console.log('📊 TODOS os eventos no banco:', { data: allEvents, error: allEventsError });
+      
+      if (allEvents && allEvents.length > 0) {
+        console.log('📋 Status dos eventos encontrados:');
+        allEvents.forEach(event => {
+          console.log(`- ${event.title}: status="${event.status}"`);
+        });
+      }
+
+      // Agora buscar especificamente os aprovados
+      console.log('🔍 Buscando eventos com status = "approved"...');
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('status', 'approved')
         .order('date', { ascending: true });
 
-      console.log('📊 Resultado da consulta de eventos:', { data, error });
+      console.log('📊 Resultado da consulta de eventos aprovados:', { data, error });
 
       if (error) {
         console.error('❌ Erro ao buscar eventos:', error);
@@ -76,7 +92,7 @@ export const useSupabaseEvents = () => {
         console.log('✅ Eventos formatados com sucesso:', formattedEvents);
         setEvents(formattedEvents);
       } else {
-        console.log('📭 Nenhum evento encontrado');
+        console.log('📭 Nenhum evento aprovado encontrado');
         setEvents([]);
       }
     } catch (exception) {
