@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Calendar, Clock, MapPin, Users, ArrowLeft, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
@@ -12,12 +12,58 @@ import { Separator } from "@/components/ui/separator";
 import MapLocation from "@/components/MapLocation";
 import SocialMediaLinks from "@/components/SocialMediaLinks";
 import { useEventsList } from "@/hooks/useEventsList";
+import { useEventParticipation } from "@/hooks/useEventParticipation";
+import { useEventAttendees } from "@/hooks/useEventAttendees";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { events } = useEventsList();
+  const { user } = useSupabaseAuth();
+  const { joinEvent, leaveEvent, checkUserParticipation, loading: participationLoading } = useEventParticipation();
+  const { attendeesCount, loading: attendeesLoading } = useEventAttendees(id || '');
+  
+  const [isParticipating, setIsParticipating] = useState(false);
+  const [checkingParticipation, setCheckingParticipation] = useState(true);
   
   const event = events.find(e => e.id === id);
+
+  // Verificar se o usuário já está participando
+  useEffect(() => {
+    const checkParticipation = async () => {
+      if (user && id) {
+        setCheckingParticipation(true);
+        const participating = await checkUserParticipation(id, user.id);
+        setIsParticipating(participating);
+        setCheckingParticipation(false);
+      } else {
+        setCheckingParticipation(false);
+      }
+    };
+
+    checkParticipation();
+  }, [user, id, checkUserParticipation]);
+
+  const handleParticipation = async () => {
+    if (!user) {
+      // Redirecionar para login se não estiver logado
+      return;
+    }
+
+    if (!id) return;
+
+    if (isParticipating) {
+      const result = await leaveEvent(id, user.id);
+      if (result.success) {
+        setIsParticipating(false);
+      }
+    } else {
+      const result = await joinEvent(id, user.id);
+      if (result.success) {
+        setIsParticipating(true);
+      }
+    }
+  };
   
   if (!event) {
     return (
@@ -40,8 +86,23 @@ const EventDetails = () => {
 
   const eventDate = new Date(event.date);
   const isEventPast = eventDate < new Date();
-  const spotsRemaining = event.capacity - event.attendees;
+  const currentAttendees = attendeesLoading ? event.attendees : attendeesCount;
+  const spotsRemaining = event.capacity - currentAttendees;
   const isFull = spotsRemaining <= 0;
+
+  const getButtonText = () => {
+    if (!user) return "Fazer login para participar";
+    if (isEventPast) return "Evento já realizado";
+    if (isFull && !isParticipating) return "Entrar na lista de espera";
+    if (isParticipating) return "Cancelar participação";
+    return "Participar do evento";
+  };
+
+  const getButtonVariant = () => {
+    if (!user || isEventPast || (isFull && !isParticipating)) return "outline";
+    if (isParticipating) return "destructive";
+    return "default";
+  };
 
   return (
     <div className="py-8">
@@ -158,11 +219,16 @@ const EventDetails = () => {
                     <Users className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
                       <p className="font-medium">
-                        {event.attendees}/{event.capacity} participantes
+                        {currentAttendees}/{event.capacity} participantes
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {isFull ? "Evento lotado" : `${spotsRemaining} vagas restantes`}
                       </p>
+                      {isParticipating && (
+                        <p className="text-sm text-green-600 font-medium">
+                          ✓ Você está participando
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -183,20 +249,27 @@ const EventDetails = () => {
 
                   <Button 
                     className="w-full" 
-                    disabled={isFull || isEventPast}
-                    variant={isFull || isEventPast ? "outline" : "default"}
+                    onClick={!user ? () => window.location.href = '/login' : handleParticipation}
+                    disabled={participationLoading || checkingParticipation || (isEventPast && !isParticipating)}
+                    variant={getButtonVariant()}
                   >
-                    {isEventPast 
-                      ? "Evento já realizado" 
-                      : isFull 
-                        ? "Entrar na lista de espera" 
-                        : "Participar do evento"
-                    }
+                    {participationLoading || checkingParticipation ? "Carregando..." : getButtonText()}
                   </Button>
 
-                  {!isFull && !isEventPast && (
+                  {user && !isEventPast && !checkingParticipation && (
                     <p className="text-xs text-muted-foreground text-center">
-                      Você será redirecionado para confirmar sua participação
+                      {isParticipating 
+                        ? "Clique para cancelar sua participação" 
+                        : isFull 
+                          ? "Entre na lista de espera caso alguém desista"
+                          : "Clique para confirmar sua participação"
+                      }
+                    </p>
+                  )}
+
+                  {!user && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Você precisa estar logado para participar do evento
                     </p>
                   )}
                 </div>

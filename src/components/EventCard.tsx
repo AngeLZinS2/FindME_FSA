@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import SocialMediaLinks from "./SocialMediaLinks";
 import { SocialMediaLink } from "./SocialMediaInputs";
+import { useEventAttendees } from "@/hooks/useEventAttendees";
 
 export interface EventProps {
   id: string;
@@ -31,15 +32,18 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
     date,
     time,
     capacity,
-    attendees,
     category,
     image,
     socialMedia = [],
   } = event;
 
-  const capacityPercentage = (attendees / capacity) * 100;
+  const { attendeesCount, loading: attendeesLoading } = useEventAttendees(id);
+  
+  // Usar a contagem real ou fallback para o valor do evento
+  const currentAttendees = attendeesLoading ? event.attendees : attendeesCount;
+  const capacityPercentage = (currentAttendees / capacity) * 100;
   const isAlmostFull = capacityPercentage >= 80;
-  const isFull = attendees >= capacity;
+  const isFull = currentAttendees >= capacity;
 
   const formattedDate = new Date(date).toLocaleDateString("pt-BR", {
     weekday: "short",
@@ -91,7 +95,7 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
           <div className="flex items-center gap-1 col-span-2">
             <Users size={12} className="flex-shrink-0" />
             <span>
-              {attendees}/{capacity} {isFull ? "(Lotado)" : isAlmostFull ? "(Quase lotado)" : ""}
+              {currentAttendees}/{capacity} {isFull ? "(Lotado)" : isAlmostFull ? "(Quase lotado)" : ""}
             </span>
           </div>
         </div>
