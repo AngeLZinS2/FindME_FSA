@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
@@ -21,10 +22,34 @@ export const useSupabaseEvents = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = async () => {
-    console.log('🔍 Iniciando busca por eventos aprovados...');
+    console.log('🔍 Iniciando busca por eventos...');
     setLoading(true);
     
     try {
+      // Primeiro, vamos buscar TODOS os eventos para debug
+      console.log('🔍 Buscando TODOS os eventos primeiro...');
+      const { data: allData, error: allError } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+
+      console.log('📊 TODOS os eventos:', { data: allData, error: allError });
+
+      if (allError) {
+        console.error('❌ Erro ao buscar todos os eventos:', allError);
+      } else {
+        console.log(`📈 Total de eventos no banco: ${allData?.length || 0}`);
+        if (allData && allData.length > 0) {
+          console.log('🔍 Status dos eventos encontrados:');
+          const statusCount = allData.reduce((acc: any, event) => {
+            acc[event.status] = (acc[event.status] || 0) + 1;
+            return acc;
+          }, {});
+          console.log('📊 Contagem por status:', statusCount);
+        }
+      }
+
+      // Agora buscar apenas os aprovados
       console.log('🔍 Buscando eventos com status "approved"...');
       const { data, error } = await supabase
         .from('events')
@@ -32,35 +57,24 @@ export const useSupabaseEvents = () => {
         .eq('status', 'approved')
         .order('date', { ascending: true });
 
-      console.log('📊 Resultado da consulta:', { data, error });
+      console.log('📊 Resultado da consulta de eventos aprovados:', { data, error });
 
       if (error) {
-        console.error('❌ Erro ao buscar eventos:', error);
+        console.error('❌ Erro ao buscar eventos aprovados:', error);
         setEvents([]);
-        setLoading(false);
         return;
       }
 
       if (!data || data.length === 0) {
         console.log('📭 Nenhum evento aprovado encontrado');
         setEvents([]);
-        setLoading(false);
         return;
       }
 
       console.log(`📈 Número de eventos aprovados encontrados: ${data.length}`);
       
-      const formattedEvents: EventProps[] = [];
-      
-      for (const event of data) {
+      const formattedEvents: EventProps[] = data.map((event) => {
         console.log('🔄 Processando evento:', event.title);
-        console.log('📋 Dados do evento:', {
-          id: event.id,
-          title: event.title,
-          date: event.date,
-          time: event.time,
-          status: event.status
-        });
         
         // Safely parse social_media from Json to SocialMediaLink[]
         let socialMedia: SocialMediaLink[] = [];
@@ -92,8 +106,8 @@ export const useSupabaseEvents = () => {
         };
         
         console.log('✅ Evento formatado:', formattedEvent);
-        formattedEvents.push(formattedEvent);
-      }
+        return formattedEvent;
+      });
       
       console.log('✅ Todos os eventos formatados:', formattedEvents);
       console.log('📝 Definindo eventos no state com', formattedEvents.length, 'eventos...');
