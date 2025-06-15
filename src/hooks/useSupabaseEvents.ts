@@ -28,36 +28,36 @@ export const useSupabaseEvents = () => {
     setError(null);
     
     try {
-      const { data: events, error: eventsError } = await supabase
+      const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('*')
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
-      console.log('📊 [useSupabaseEvents] Resultado da busca:', { 
-        count: events?.length || 0, 
-        hasError: !!eventsError,
-        firstEvent: events?.[0]?.title || 'Nenhum'
+      console.log('📊 [useSupabaseEvents] Resposta da consulta:', { 
+        data: eventsData,
+        error: eventsError,
+        count: eventsData?.length || 0
       });
 
       if (eventsError) {
-        console.error('❌ [useSupabaseEvents] Erro ao buscar eventos:', eventsError);
-        setError(`Erro ao buscar eventos: ${eventsError.message}`);
+        console.error('❌ [useSupabaseEvents] Erro na consulta:', eventsError);
+        throw eventsError;
+      }
+
+      if (!eventsData) {
+        console.log('📭 [useSupabaseEvents] Dados vazios recebidos');
         setEvents([]);
+        setLoading(false);
         return;
       }
 
-      if (!events || events.length === 0) {
-        console.log('📭 [useSupabaseEvents] Nenhum evento aprovado encontrado');
-        setEvents([]);
-        return;
-      }
-
-      console.log('🔄 [useSupabaseEvents] Formatando eventos...');
-      const formattedEvents: EventProps[] = events.map((event) => {
+      console.log('🔄 [useSupabaseEvents] Formatando', eventsData.length, 'eventos...');
+      const formattedEvents: EventProps[] = eventsData.map((event) => {
         let socialMedia: SocialMediaLink[] = [];
+        
         try {
-          if (Array.isArray(event.social_media)) {
+          if (event.social_media && Array.isArray(event.social_media)) {
             socialMedia = event.social_media.map((item: any) => ({
               id: item.id || `social-${Date.now()}-${Math.random()}`,
               platform: item.platform || '',
@@ -65,7 +65,7 @@ export const useSupabaseEvents = () => {
             }));
           }
         } catch (e) {
-          console.warn('⚠️ [useSupabaseEvents] Erro ao processar social media:', e);
+          console.warn('⚠️ [useSupabaseEvents] Erro ao processar social media para evento', event.id, ':', e);
           socialMedia = [];
         }
 
@@ -77,33 +77,32 @@ export const useSupabaseEvents = () => {
           date: event.date,
           time: event.time,
           capacity: event.capacity,
-          attendees: 0,
+          attendees: 0, // TODO: Implementar contagem real de participantes
           category: event.category,
           image: event.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
           socialMedia,
         };
       });
       
-      console.log('✅ [useSupabaseEvents] Eventos formatados:', formattedEvents.length);
+      console.log('✅ [useSupabaseEvents] Eventos formatados com sucesso:', formattedEvents.length);
       setEvents(formattedEvents);
+      setError(null);
       
-    } catch (exception) {
-      console.error('💥 [useSupabaseEvents] Exceção:', exception);
-      setError(`Erro na conexão: ${exception}`);
+    } catch (exception: any) {
+      console.error('💥 [useSupabaseEvents] Exceção durante busca:', exception);
+      setError(`Erro ao carregar eventos: ${exception.message || exception}`);
       setEvents([]);
     } finally {
-      console.log('🏁 [useSupabaseEvents] Finalizando busca');
+      console.log('🏁 [useSupabaseEvents] Finalizando busca, definindo loading = false');
       setLoading(false);
     }
   };
 
   const createEvent = async (eventData: CreateEventData, creatorId: string, creatorName: string) => {
-    console.log('useSupabaseEvents createEvent called with:', { eventData, creatorId, creatorName });
+    console.log('📝 [useSupabaseEvents] Criando evento:', { eventData, creatorId, creatorName });
     
     try {
       const socialMediaJson = eventData.socialMedia ? JSON.parse(JSON.stringify(eventData.socialMedia)) : [];
-      
-      console.log('Inserting event into database...');
       
       const { data, error } = await supabase
         .from('events')
@@ -123,31 +122,47 @@ export const useSupabaseEvents = () => {
           status: 'pending'
         });
 
-      console.log('Database response:', { data, error });
+      console.log('✅ [useSupabaseEvents] Evento criado:', { data, error });
       return { data, error };
     } catch (exception) {
-      console.error('Exception in createEvent:', exception);
+      console.error('💥 [useSupabaseEvents] Erro ao criar evento:', exception);
       return { data: null, error: exception };
     }
   };
 
   const getUserEvents = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('creator_id', userId)
-      .order('created_at', { ascending: false });
+    console.log('👤 [useSupabaseEvents] Buscando eventos do usuário:', userId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('creator_id', userId)
+        .order('created_at', { ascending: false });
 
-    return { data, error };
+      console.log('📊 [useSupabaseEvents] Eventos do usuário:', { data, error, count: data?.length || 0 });
+      return { data, error };
+    } catch (exception) {
+      console.error('💥 [useSupabaseEvents] Erro ao buscar eventos do usuário:', exception);
+      return { data: null, error: exception };
+    }
   };
 
   const deleteEvent = async (eventId: string) => {
-    const { data, error } = await supabase
-      .from('events')
-      .delete()
-      .eq('id', eventId);
+    console.log('🗑️ [useSupabaseEvents] Deletando evento:', eventId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
 
-    return { data, error };
+      console.log('✅ [useSupabaseEvents] Resultado da deleção:', { data, error });
+      return { data, error };
+    } catch (exception) {
+      console.error('💥 [useSupabaseEvents] Erro ao deletar evento:', exception);
+      return { data: null, error: exception };
+    }
   };
 
   useEffect(() => {
