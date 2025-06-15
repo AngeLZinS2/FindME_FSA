@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
@@ -42,6 +43,13 @@ export const useSupabaseEvents = () => {
         
         const formattedEvents: EventProps[] = data.map(event => {
           console.log('🔄 Processando evento:', event.title);
+          console.log('📋 Dados do evento:', {
+            id: event.id,
+            title: event.title,
+            date: event.date,
+            time: event.time,
+            status: event.status
+          });
           
           // Safely parse social_media from Json to SocialMediaLink[]
           let socialMedia: SocialMediaLink[] = [];
@@ -58,7 +66,7 @@ export const useSupabaseEvents = () => {
             socialMedia = [];
           }
 
-          return {
+          const formattedEvent = {
             id: event.id,
             title: event.title,
             description: event.description,
@@ -71,10 +79,15 @@ export const useSupabaseEvents = () => {
             image: event.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
             socialMedia,
           };
+          
+          console.log('✅ Evento formatado:', formattedEvent);
+          return formattedEvent;
         });
         
-        console.log('✅ Eventos formatados com sucesso:', formattedEvents);
+        console.log('✅ Todos os eventos formatados:', formattedEvents);
+        console.log('📝 Definindo eventos no state...');
         setEvents(formattedEvents);
+        console.log('📝 State de eventos atualizado');
       } else {
         console.log('📭 Nenhum evento aprovado encontrado');
         setEvents([]);
@@ -144,6 +157,7 @@ export const useSupabaseEvents = () => {
   };
 
   useEffect(() => {
+    console.log('🚀 useEffect disparado - iniciando fetchEvents');
     fetchEvents();
   }, []);
 

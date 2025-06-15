@@ -13,6 +13,8 @@ import { useEventsList } from "@/hooks/useEventsList";
 const ITEMS_PER_PAGE = 6;
 
 const EventsPage = () => {
+  console.log('🎪 EventsPage renderizando...');
+  
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCategory = searchParams.get("category") || "Todos";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
@@ -26,12 +28,20 @@ const EventsPage = () => {
   
   const { events: eventsList, loading } = useEventsList();
   
-  console.log('🎭 Eventos carregados na página:', eventsList);
-  console.log('⏳ Loading status:', loading);
+  console.log('🎭 Dados recebidos do hook:');
+  console.log('- Eventos:', eventsList);
+  console.log('- Quantidade:', eventsList?.length || 0);
+  console.log('- Loading:', loading);
+  console.log('- Tipo dos eventos:', typeof eventsList);
+  console.log('- É array?', Array.isArray(eventsList));
   
   useEffect(() => {
-    console.log('🔄 Página de eventos montada, verificando eventos...');
-  }, []);
+    console.log('🔄 useEffect da página - eventos atualizados:', eventsList);
+  }, [eventsList]);
+
+  useEffect(() => {
+    console.log('🔄 useEffect da página - loading atualizado:', loading);
+  }, [loading]);
 
   const filteredEvents = eventsList.filter((event) => {
     const matchesSearch = 
@@ -49,6 +59,8 @@ const EventsPage = () => {
     
     return matchesSearch && matchesCategory && matchesCapacity && matchesAvailability;
   });
+
+  console.log('🔍 Eventos após filtros:', filteredEvents);
 
   const sortedEvents = [...filteredEvents].sort((a, b) => {
     switch(sortOrder) {
@@ -70,6 +82,8 @@ const EventsPage = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  console.log('📄 Eventos paginados para exibir:', paginatedEvents);
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
@@ -105,6 +119,17 @@ const EventsPage = () => {
     <div className="py-12">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
+        
+        {/* Debug info for development */}
+        <div className="mb-4 p-3 bg-muted rounded-lg text-sm">
+          <p><strong>Debug Info:</strong></p>
+          <p>• Total eventos: {eventsList?.length || 0}</p>
+          <p>• Loading: {loading ? 'Sim' : 'Não'}</p>
+          <p>• Eventos após filtros: {filteredEvents?.length || 0}</p>
+          <p>• Eventos paginados: {paginatedEvents?.length || 0}</p>
+          <p>• Tipo eventsList: {typeof eventsList}</p>
+          <p>• É array: {Array.isArray(eventsList) ? 'Sim' : 'Não'}</p>
+        </div>
         
         {/* Show loading state */}
         {loading && (
@@ -237,9 +262,10 @@ const EventsPage = () => {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
+              {paginatedEvents.map((event) => {
+                console.log('🎫 Renderizando evento:', event.title, event);
+                return <EventCard key={event.id} event={event} />;
+              })}
             </div>
             
             <Pagination className="mt-8">
