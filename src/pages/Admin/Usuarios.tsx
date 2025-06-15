@@ -88,19 +88,19 @@ const AdminUsuarios = () => {
         .order('created_at', { ascending: false });
 
       console.log('📊 Resultado da busca:', { data, error });
-      console.log('📈 Número de administradores encontrados:', data?.length || 0);
-
+      
       if (error) {
         console.error('❌ Erro ao buscar administradores:', error);
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Não foi possível carregar os administradores.",
+          description: `Erro ao carregar administradores: ${error.message}`,
         });
         return;
       }
 
       console.log('✅ Administradores carregados com sucesso:', data);
+      console.log('📈 Número de administradores encontrados:', data?.length || 0);
       setAdmins(data || []);
     } catch (error) {
       console.error('💥 Erro inesperado:', error);
@@ -155,7 +155,6 @@ const AdminUsuarios = () => {
         // Se uma nova senha foi fornecida, incluir o hash
         if (data.senha.trim()) {
           console.log('🔒 Atualizando com nova senha');
-          // Usar a função do PostgreSQL para hash da senha
           const { error: updateError } = await (supabase.rpc as any)('update_admin_password', {
             admin_id: editingAdmin.id,
             new_password: data.senha,
@@ -167,13 +166,12 @@ const AdminUsuarios = () => {
             toast({
               variant: "destructive",
               title: "Erro",
-              description: "Não foi possível atualizar o administrador.",
+              description: `Erro ao atualizar administrador: ${updateError.message}`,
             });
             return;
           }
         } else {
           console.log('📝 Atualizando apenas dados básicos');
-          // Atualizar apenas os dados básicos
           const { error: updateError } = await supabase
             .from('admin_users')
             .update(updateData)
@@ -184,7 +182,7 @@ const AdminUsuarios = () => {
             toast({
               variant: "destructive",
               title: "Erro",
-              description: "Não foi possível atualizar o administrador.",
+              description: `Erro ao atualizar administrador: ${updateError.message}`,
             });
             return;
           }
@@ -197,7 +195,6 @@ const AdminUsuarios = () => {
         });
       } else {
         console.log('👤 Criando novo administrador');
-        // Adicionar novo administrador
         const { error: insertError } = await (supabase.rpc as any)('create_admin_user', {
           admin_email: data.email,
           admin_name: data.nome,
@@ -210,7 +207,7 @@ const AdminUsuarios = () => {
           toast({
             variant: "destructive",
             title: "Erro",
-            description: "Não foi possível criar o administrador. Verifique se o email já não está em uso.",
+            description: `Erro ao criar administrador: ${insertError.message}`,
           });
           return;
         }
@@ -223,8 +220,13 @@ const AdminUsuarios = () => {
       }
       
       setIsDialogOpen(false);
+      form.reset();
       console.log('🔄 Recarregando lista de administradores...');
-      fetchAdmins(); // Recarregar a lista
+      
+      // Aguardar um momento antes de recarregar para garantir que os dados foram persistidos
+      setTimeout(() => {
+        fetchAdmins();
+      }, 500);
     } catch (error) {
       console.error('💥 Erro inesperado:', error);
       toast({
@@ -248,7 +250,7 @@ const AdminUsuarios = () => {
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Não foi possível excluir o administrador.",
+          description: `Erro ao excluir administrador: ${error.message}`,
         });
         return;
       }
@@ -260,7 +262,7 @@ const AdminUsuarios = () => {
         variant: "destructive",
       });
       
-      fetchAdmins(); // Recarregar a lista
+      fetchAdmins();
     } catch (error) {
       console.error('💥 Erro inesperado:', error);
       toast({
@@ -286,7 +288,7 @@ const AdminUsuarios = () => {
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Não foi possível alterar o status do administrador.",
+          description: `Erro ao alterar status: ${error.message}`,
         });
         return;
       }
@@ -297,7 +299,7 @@ const AdminUsuarios = () => {
         description: `O administrador agora está ${newStatus === "active" ? "Ativo" : "Inativo"}.`,
       });
       
-      fetchAdmins(); // Recarregar a lista
+      fetchAdmins();
     } catch (error) {
       console.error('💥 Erro inesperado:', error);
       toast({
