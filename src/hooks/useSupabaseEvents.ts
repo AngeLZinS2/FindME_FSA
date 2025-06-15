@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
@@ -26,7 +25,6 @@ export const useSupabaseEvents = () => {
     console.log('🔍 [useSupabaseEvents] Iniciando busca por eventos aprovados...');
     setLoading(true);
     setError(null);
-    
     try {
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
@@ -42,20 +40,21 @@ export const useSupabaseEvents = () => {
 
       if (eventsError) {
         console.error('❌ [useSupabaseEvents] Erro na consulta:', eventsError);
-        throw eventsError;
-      }
-
-      if (!eventsData) {
-        console.log('📭 [useSupabaseEvents] Dados vazios recebidos');
+        setError(`Erro na consulta: ${eventsError.message}`);
         setEvents([]);
         setLoading(false);
         return;
       }
 
-      console.log('🔄 [useSupabaseEvents] Formatando', eventsData.length, 'eventos...');
+      if (!eventsData || eventsData.length === 0) {
+        console.log('📭 [useSupabaseEvents] Nenhum evento aprovado encontrado');
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
       const formattedEvents: EventProps[] = eventsData.map((event) => {
         let socialMedia: SocialMediaLink[] = [];
-        
         try {
           if (event.social_media && Array.isArray(event.social_media)) {
             socialMedia = event.social_media.map((item: any) => ({
@@ -68,7 +67,6 @@ export const useSupabaseEvents = () => {
           console.warn('⚠️ [useSupabaseEvents] Erro ao processar social media para evento', event.id, ':', e);
           socialMedia = [];
         }
-
         return {
           id: event.id,
           title: event.title,
@@ -83,17 +81,16 @@ export const useSupabaseEvents = () => {
           socialMedia,
         };
       });
-      
-      console.log('✅ [useSupabaseEvents] Eventos formatados com sucesso:', formattedEvents.length);
+
       setEvents(formattedEvents);
       setError(null);
-      
+      setLoading(false);
+      console.log('✅ [useSupabaseEvents] Eventos formatados e setados:', formattedEvents.length);
+
     } catch (exception: any) {
       console.error('💥 [useSupabaseEvents] Exceção durante busca:', exception);
       setError(`Erro ao carregar eventos: ${exception.message || exception}`);
       setEvents([]);
-    } finally {
-      console.log('🏁 [useSupabaseEvents] Finalizando busca, definindo loading = false');
       setLoading(false);
     }
   };
