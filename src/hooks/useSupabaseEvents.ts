@@ -22,26 +22,38 @@ export const useSupabaseEvents = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = async () => {
-    console.log('🔍 [useSupabaseEvents] Iniciando busca por eventos aprovados...');
+    console.log('🔍 [useSupabaseEvents] Iniciando busca por eventos aprobados...');
     setLoading(true);
     setError(null);
 
     try {
+      // Versão DEBUG: buscar todos os eventos, sem filtro de approved
+      const { data: allEvents, error: allError } = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      console.log('🐞 [DEBUG] Todos os eventos encontrados:', allEvents?.length, allEvents);
+
       const { data: events, error: eventsError } = await supabase
         .from('events')
         .select('*')
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
-      console.log('📊 [useSupabaseEvents] Resultado da busca:', {
+      console.log('📊 [useSupabaseEvents] Resultado da busca filtrada:', {
         rawEvents: events,
         count: events?.length || 0,
         hasError: !!eventsError,
         firstEvent: events?.[0]?.title || 'Nenhum',
       });
 
+      if (allError) {
+        console.error('❌ [DEBUG] Erro ao buscar TODOS os eventos:', allError);
+      }
+
       if (eventsError) {
-        console.error('❌ [useSupabaseEvents] Erro ao buscar eventos:', eventsError);
+        console.error('❌ [useSupabaseEvents] Erro ao buscar eventos aprovados:', eventsError);
         setError(`Erro ao buscar eventos: ${eventsError.message}`);
         setEvents([]);
         setLoading(false);
@@ -49,9 +61,9 @@ export const useSupabaseEvents = () => {
       }
 
       if (!events || events.length === 0) {
-        console.log('📭 [useSupabaseEvents] Nenhum evento aprovado encontrado');
         setEvents([]);
         setLoading(false);
+        console.warn('📭 [useSupabaseEvents] Nenhum evento aprovado encontrado');
         return;
       }
 
