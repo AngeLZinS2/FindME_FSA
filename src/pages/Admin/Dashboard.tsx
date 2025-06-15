@@ -9,73 +9,144 @@ import {
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ActivityLog {
-  id: number;
+  id: string;
   action: string;
   user: string;
   target: string;
   date: string;
 }
 
+interface DashboardStats {
+  totalEvents: number;
+  pendingEvents: number;
+  totalUsers: number;
+  approvalRate: number;
+}
+
 const AdminDashboard = () => {
-  // Estado para armazenar os dados do dashboard
-  const [dashboardData, setDashboardData] = useState({
+  const [dashboardData, setDashboardData] = useState<DashboardStats>({
     totalEvents: 0,
     pendingEvents: 0,
     totalUsers: 0,
-    recentActionLogs: [] as ActivityLog[]
+    approvalRate: 0
   });
+  
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const { toast } = useToast();
 
-  // Buscar dados ao carregar o componente
-  useEffect(() => {
+  // Buscar estatísticas do dashboard
+  const fetchDashboardStats = async () => {
     try {
-      // Buscar eventos do localStorage
-      const adminEvents = JSON.parse(localStorage.getItem("adminEvents") || "[]");
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const activityLogs = JSON.parse(localStorage.getItem("activityLogs") || "[]");
+      console.log('🔍 Buscando estatísticas do dashboard...');
       
-      // Calcular estatísticas
-      const pendingEvents = adminEvents.filter((event: any) => event.status === "pendente").length;
-      
-      // Atualizar o estado com os dados calculados
-      setDashboardData({
-        totalEvents: adminEvents.length,
-        pendingEvents: pendingEvents,
-        totalUsers: users.length,
-        recentActionLogs: activityLogs.slice(0, 10) // Pegar os 10 logs mais recentes
-      });
-      
-      // Se não houver logs de atividade, criar alguns logs iniciais
-      if (activityLogs.length === 0) {
-        const initialLogs = [
-          { id: 1, action: "Evento aprovado", user: "Admin", target: "Festival de Música", date: "12/04/2025" },
-          { id: 2, action: "Usuário criado", user: "Admin", target: "Administrador Regional", date: "10/04/2025" },
-          { id: 3, action: "Evento rejeitado", user: "Admin", target: "Reunião Suspeita", date: "08/04/2025" }
-        ];
-        
-        localStorage.setItem("activityLogs", JSON.stringify(initialLogs));
+      // Buscar todos os eventos
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select('*');
+
+      if (eventsError) {
+        console.error('❌ Erro ao buscar eventos:', eventsError);
+        throw eventsError;
       }
+
+      // Buscar todos os usuários
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*');
+
+      if (usersError) {
+        console.error('❌ Erro ao buscar usuários:', usersError);
+        throw usersError;
+      }
+
+      console.log('📊 Dados encontrados:', {
+        totalEvents: events?.length || 0,
+        totalUsers: users?.length || 0
+      });
+
+      // Calcular estatísticas
+      const totalEvents = events?.length || 0;
+      const pendingEvents = events?.filter(event => event.status === 'pending').length || 0;
+      const approvedEvents = events?.filter(event => event.status === 'approved').length || 0;
+      const totalUsers = users?.length || 0;
+      const approvalRate = totalEvents > 0 ? Math.round((approvedEvents / totalEvents) * 100) : 0;
+
+      setDashboardData({
+        totalEvents,
+        pendingEvents,
+        totalUsers,
+        approvalRate
+      });
+
+      console.log('✅ Estatísticas calculadas:', {
+        totalEvents,
+        pendingEvents,
+        totalUsers,
+        approvalRate
+      });
+
     } catch (error) {
-      console.error("Erro ao carregar dados do dashboard:", error);
+      console.error("❌ Erro ao carregar estatísticas do dashboard:", error);
       toast({
         title: "Erro ao carregar dados",
-        description: "Não foi possível carregar os dados do dashboard.",
+        description: "Não foi possível carregar as estatísticas do dashboard.",
         variant: "destructive"
       });
     }
-  }, [toast]);
-
-  // Função para formatar a data
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return dateString; // Se não puder ser convertido, retorna a string original
-    }
-    return date.toLocaleDateString('pt-BR');
   };
+
+  // Buscar logs de atividades (usando eventos recentes como exemplo)
+  const fetchActivityLogs = async () => {
+    try {
+      console.log('🔍 Buscando logs de atividades...');
+      
+      const { data: recentEvents, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('❌ Erro ao buscar logs:', error);
+        throw error;
+      }
+
+      // Converter eventos em logs de atividade
+      const logs: ActivityLog[] = recentEvents?.map(event => ({
+        id: event.id,
+        action: event.status === 'approved' ? 'Evento aprovado' : 
+                event.status === 'rejected' ? 'Evento rejeitado' : 'Evento criado',
+        user: 'Admin',
+        target: event.title,
+        date: new Date(event.created_at || '').toLocaleDateString('pt-BR')
+      })) || [];
+
+      setActivityLogs(logs);
+      console.log('✅ Logs de atividades carregados:', logs.length);
+
+    } catch (error) {
+      console.error("❌ Erro ao carregar logs de atividades:", error);
+    }
+  };
+
+  // Carregar todos os dados ao montar o componente
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchDashboardStats(),
+        fetchActivityLogs()
+      ]);
+      setLoading(false);
+    };
+
+    loadDashboardData();
+  }, [toast]);
 
   return (
     <div className="space-y-6">
@@ -93,7 +164,9 @@ const AdminDashboard = () => {
             <CalendarCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalEvents}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : dashboardData.totalEvents}
+            </div>
             <p className="text-xs text-muted-foreground">
               eventos cadastrados
             </p>
@@ -106,7 +179,9 @@ const AdminDashboard = () => {
             <AlertTriangle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.pendingEvents}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : dashboardData.pendingEvents}
+            </div>
             <p className="text-xs text-muted-foreground">
               aguardando aprovação
             </p>
@@ -119,7 +194,9 @@ const AdminDashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalUsers}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : dashboardData.totalUsers}
+            </div>
             <p className="text-xs text-muted-foreground">
               usuários registrados
             </p>
@@ -132,7 +209,9 @@ const AdminDashboard = () => {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">87%</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : `${dashboardData.approvalRate}%`}
+            </div>
             <p className="text-xs text-muted-foreground">
               dos eventos são aprovados
             </p>
@@ -149,7 +228,11 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {dashboardData.recentActionLogs.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Carregando logs de atividades...</p>
+              </div>
+            ) : activityLogs.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -161,12 +244,12 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {dashboardData.recentActionLogs.map((log) => (
+                    {activityLogs.map((log) => (
                       <tr key={log.id} className="border-b">
                         <td className="py-3 px-4">{log.action}</td>
                         <td className="py-3 px-4">{log.user}</td>
                         <td className="py-3 px-4">{log.target}</td>
-                        <td className="py-3 px-4">{formatDate(log.date)}</td>
+                        <td className="py-3 px-4">{log.date}</td>
                       </tr>
                     ))}
                   </tbody>
