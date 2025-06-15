@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
@@ -23,38 +22,67 @@ export const useSupabaseEvents = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = async () => {
-    console.log('🔍 Iniciando busca por eventos...');
+    console.log('🔍 [STEP 1] Iniciando busca por eventos...');
     setLoading(true);
     setError(null);
     
     try {
-      console.log('🔍 Buscando eventos com status "approved"...');
+      console.log('🔍 [STEP 2] Configurando consulta Supabase...');
       
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('status', 'approved')
-        .order('date', { ascending: true });
+      // Primeiro vamos testar uma consulta simples para ver se há conexão
+      console.log('🔍 [STEP 3] Testando conexão com Supabase...');
+      const { data: testData, error: testError } = await Promise.race([
+        supabase.from('events').select('count', { count: 'exact' }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout na consulta de teste')), 10000)
+        )
+      ]) as any;
 
-      console.log('📊 Resultado da consulta:', { data, error });
+      console.log('📊 [STEP 4] Resultado do teste de conexão:', { testData, testError });
 
-      if (error) {
-        console.error('❌ Erro ao buscar eventos:', error);
-        setError(`Erro ao buscar eventos: ${error.message}`);
+      if (testError) {
+        console.error('❌ [STEP 4-ERROR] Erro na conexão:', testError);
+        setError(`Erro de conexão: ${testError.message}`);
         setEvents([]);
         return;
       }
 
-      if (!data || data.length === 0) {
-        console.log('📭 Nenhum evento aprovado encontrado');
+      console.log('✅ [STEP 5] Conexão OK. Buscando todos os eventos primeiro...');
+      
+      // Buscar todos os eventos primeiro para debug
+      const { data: allEvents, error: allError } = await Promise.race([
+        supabase.from('events').select('*').order('created_at', { ascending: false }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout na busca de todos eventos')), 15000)
+        )
+      ]) as any;
+
+      console.log('📊 [STEP 6] Todos os eventos:', { 
+        count: allEvents?.length || 0, 
+        events: allEvents?.slice(0, 3) || [], 
+        error: allError 
+      });
+
+      if (allError) {
+        console.error('❌ [STEP 6-ERROR] Erro ao buscar todos eventos:', allError);
+        setError(`Erro ao buscar eventos: ${allError.message}`);
         setEvents([]);
         return;
       }
 
-      console.log(`📈 Eventos encontrados: ${data.length}`);
-      
-      const formattedEvents: EventProps[] = data.map((event) => {
-        console.log('🔄 Formatando evento:', event.title);
+      console.log('🔍 [STEP 7] Filtrando eventos aprovados...');
+      const approvedEvents = allEvents?.filter(event => event.status === 'approved') || [];
+      console.log('📊 [STEP 8] Eventos aprovados encontrados:', approvedEvents.length);
+
+      if (approvedEvents.length === 0) {
+        console.log('📭 [STEP 9] Nenhum evento aprovado encontrado');
+        setEvents([]);
+        return;
+      }
+
+      console.log('🔄 [STEP 10] Formatando eventos...');
+      const formattedEvents: EventProps[] = approvedEvents.map((event, index) => {
+        console.log(`🔄 [STEP 10.${index + 1}] Formatando evento:`, event.title);
         
         let socialMedia: SocialMediaLink[] = [];
         try {
@@ -66,7 +94,7 @@ export const useSupabaseEvents = () => {
             }));
           }
         } catch (e) {
-          console.warn('⚠️ Erro ao processar social media:', e);
+          console.warn(`⚠️ [STEP 10.${index + 1}] Erro ao processar social media:`, e);
           socialMedia = [];
         }
 
@@ -85,16 +113,16 @@ export const useSupabaseEvents = () => {
         };
       });
       
-      console.log('✅ Eventos formatados:', formattedEvents);
+      console.log('✅ [STEP 11] Eventos formatados com sucesso:', formattedEvents.length);
       setEvents(formattedEvents);
       
     } catch (exception) {
-      console.error('💥 Exceção ao buscar eventos:', exception);
+      console.error('💥 [EXCEPTION] Exceção ao buscar eventos:', exception);
       setError(`Exceção: ${exception}`);
       setEvents([]);
     } finally {
+      console.log('🏁 [FINAL] Finalizando busca, setting loading=false');
       setLoading(false);
-      console.log('🏁 Busca finalizada, loading=false');
     }
   };
 
@@ -152,7 +180,7 @@ export const useSupabaseEvents = () => {
   };
 
   useEffect(() => {
-    console.log('🚀 useEffect disparado - iniciando fetchEvents');
+    console.log('🚀 [INIT] useEffect disparado - iniciando fetchEvents');
     fetchEvents();
   }, []);
 
