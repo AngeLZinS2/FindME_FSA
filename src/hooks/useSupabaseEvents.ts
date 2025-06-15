@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventProps } from '@/components/EventCard';
@@ -38,67 +37,77 @@ export const useSupabaseEvents = () => {
       if (error) {
         console.error('❌ Erro ao buscar eventos:', error);
         setEvents([]);
-      } else if (data && data.length > 0) {
-        console.log(`📈 Número de eventos aprovados encontrados: ${data.length}`);
-        
-        const formattedEvents: EventProps[] = data.map(event => {
-          console.log('🔄 Processando evento:', event.title);
-          console.log('📋 Dados do evento:', {
-            id: event.id,
-            title: event.title,
-            date: event.date,
-            time: event.time,
-            status: event.status
-          });
-          
-          // Safely parse social_media from Json to SocialMediaLink[]
-          let socialMedia: SocialMediaLink[] = [];
-          try {
-            if (Array.isArray(event.social_media)) {
-              socialMedia = event.social_media.map((item: any) => ({
-                id: item.id || `social-${Date.now()}-${Math.random()}`,
-                platform: item.platform || '',
-                url: item.url || ''
-              }));
-            }
-          } catch (e) {
-            console.warn('⚠️ Erro ao processar social media do evento:', event.title, e);
-            socialMedia = [];
-          }
+        setLoading(false);
+        return;
+      }
 
-          const formattedEvent = {
-            id: event.id,
-            title: event.title,
-            description: event.description,
-            location: event.location,
-            date: event.date,
-            time: event.time,
-            capacity: event.capacity,
-            attendees: 0, // We'll need to count from event_attendees table
-            category: event.category,
-            image: event.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
-            socialMedia,
-          };
-          
-          console.log('✅ Evento formatado:', formattedEvent);
-          return formattedEvent;
-        });
-        
-        console.log('✅ Todos os eventos formatados:', formattedEvents);
-        console.log('📝 Definindo eventos no state...');
-        setEvents(formattedEvents);
-        console.log('📝 State de eventos atualizado');
-      } else {
+      if (!data || data.length === 0) {
         console.log('📭 Nenhum evento aprovado encontrado');
         setEvents([]);
+        setLoading(false);
+        return;
       }
+
+      console.log(`📈 Número de eventos aprovados encontrados: ${data.length}`);
+      
+      const formattedEvents: EventProps[] = [];
+      
+      for (const event of data) {
+        console.log('🔄 Processando evento:', event.title);
+        console.log('📋 Dados do evento:', {
+          id: event.id,
+          title: event.title,
+          date: event.date,
+          time: event.time,
+          status: event.status
+        });
+        
+        // Safely parse social_media from Json to SocialMediaLink[]
+        let socialMedia: SocialMediaLink[] = [];
+        try {
+          if (Array.isArray(event.social_media)) {
+            socialMedia = event.social_media.map((item: any) => ({
+              id: item.id || `social-${Date.now()}-${Math.random()}`,
+              platform: item.platform || '',
+              url: item.url || ''
+            }));
+          }
+        } catch (e) {
+          console.warn('⚠️ Erro ao processar social media do evento:', event.title, e);
+          socialMedia = [];
+        }
+
+        const formattedEvent: EventProps = {
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          location: event.location,
+          date: event.date,
+          time: event.time,
+          capacity: event.capacity,
+          attendees: 0, // We'll need to count from event_attendees table
+          category: event.category,
+          image: event.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
+          socialMedia,
+        };
+        
+        console.log('✅ Evento formatado:', formattedEvent);
+        formattedEvents.push(formattedEvent);
+      }
+      
+      console.log('✅ Todos os eventos formatados:', formattedEvents);
+      console.log('📝 Definindo eventos no state com', formattedEvents.length, 'eventos...');
+      
+      setEvents(formattedEvents);
+      console.log('📝 State de eventos atualizado');
+      
     } catch (exception) {
       console.error('💥 Exceção ao buscar eventos:', exception);
       setEvents([]);
+    } finally {
+      setLoading(false);
+      console.log('🏁 Busca finalizada, loading=false');
     }
-    
-    setLoading(false);
-    console.log('🏁 Busca finalizada, loading=false');
   };
 
   const createEvent = async (eventData: CreateEventData, creatorId: string, creatorName: string) => {
