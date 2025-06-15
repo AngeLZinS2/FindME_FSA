@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { CalendarCheck, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,9 +17,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseEvents } from "@/hooks/useSupabaseEvents";
+import { SocialMediaLink } from "@/components/SocialMediaInputs";
+import { Json } from "@/integrations/supabase/types";
 
-interface UserEvent {
+interface Event {
   id: string;
   title: string;
   description: string;
@@ -33,95 +34,49 @@ interface UserEvent {
   image?: string;
   status: string;
   creator_name: string;
-  social_media: any;
+  social_media: Json;
 }
 
 const UserEvents = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useSupabaseAuth();
-  const [events, setEvents] = useState<UserEvent[]>([]);
+  const { getUserEvents, deleteEvent } = useSupabaseEvents();
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchUserEvents = async () => {
-    if (!user) {
-      console.log('👤 [UserEvents] Usuário não logado');
-      setLoading(false);
-      return;
-    }
-
-    console.log('🔍 [UserEvents] Buscando eventos do usuário:', user.id);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false });
-
-      console.log('📊 [UserEvents] Resultado da busca:', {
-        data: data,
-        error: fetchError,
-        userId: user.id,
-        eventCount: data?.length || 0
-      });
-
-      if (fetchError) {
-        console.error('❌ [UserEvents] Erro ao buscar eventos:', fetchError);
-        setError(`Erro ao buscar eventos: ${fetchError.message}`);
-        setEvents([]);
-      } else {
-        console.log('✅ [UserEvents] Eventos encontrados:', data?.length || 0);
-        setEvents(data || []);
-      }
-    } catch (exception) {
-      console.error('💥 [UserEvents] Exceção ao buscar eventos:', exception);
-      setError(`Erro na conexão: ${exception}`);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-      console.log('🏁 [UserEvents] Busca finalizada');
-    }
-  };
 
   useEffect(() => {
-    console.log('🚀 [UserEvents] useEffect disparado, user:', user?.id);
+    const fetchUserEvents = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      const { data, error } = await getUserEvents(user.id);
+      
+      if (data && !error) {
+        setEvents(data as Event[]);
+      } else if (error) {
+        console.error("Error fetching user events:", error);
+      }
+      setLoading(false);
+    };
+
     fetchUserEvents();
-  }, [user]);
+  }, [user, getUserEvents]);
 
   const handleDeleteEvent = async (id: string) => {
-    console.log('🗑️ [UserEvents] Deletando evento:', id);
+    const { error } = await deleteEvent(id);
     
-    try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error('❌ [UserEvents] Erro ao deletar:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao excluir",
-          description: "Não foi possível excluir o evento.",
-        });
-      } else {
-        console.log('✅ [UserEvents] Evento deletado com sucesso');
-        setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-        toast({
-          title: "Evento excluído",
-          description: "O evento foi removido com sucesso.",
-        });
-      }
-    } catch (exception) {
-      console.error('💥 [UserEvents] Exceção ao deletar:', exception);
+    if (error) {
       toast({
         variant: "destructive",
         title: "Erro ao excluir",
         description: "Não foi possível excluir o evento.",
+      });
+    } else {
+      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+      toast({
+        title: "Evento excluído",
+        description: "O evento foi removido com sucesso.",
       });
     }
   };
@@ -131,7 +86,6 @@ const UserEvents = () => {
   };
 
   if (loading) {
-    console.log('⏳ [UserEvents] Renderizando loading...');
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -139,21 +93,7 @@ const UserEvents = () => {
     );
   }
 
-  if (error) {
-    console.log('❌ [UserEvents] Renderizando erro:', error);
-    return (
-      <div className="text-center py-12">
-        <div className="text-red-500 mb-4">
-          <p>Erro ao carregar eventos:</p>
-          <p className="text-sm">{error}</p>
-        </div>
-        <Button onClick={fetchUserEvents}>Tentar novamente</Button>
-      </div>
-    );
-  }
-
   if (events.length === 0) {
-    console.log('📭 [UserEvents] Nenhum evento encontrado');
     return (
       <div className="text-center py-12">
         <CalendarCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -167,8 +107,6 @@ const UserEvents = () => {
       </div>
     );
   }
-
-  console.log('🎪 [UserEvents] Renderizando', events.length, 'eventos');
 
   return (
     <div className="space-y-6">
