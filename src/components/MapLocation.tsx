@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from "react";
-import { MapPin, Navigation, Loader2 } from "lucide-react";
+import { MapPin, Navigation, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MapLocationProps {
   address: string;
@@ -26,18 +27,18 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
     const geocodeAddress = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         console.log("Geocoding address:", address);
-        
+
         // Estratégia 1: Busca com endereço completo
         let response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=BR`
         );
-        
+
         let data = await response.json();
         console.log("Geocoding response (full address):", data);
-        
+
         // Estratégia 2: Se não encontrar, tenta buscar só a cidade
         if (!data || data.length === 0) {
           console.log("Trying with city name only...");
@@ -52,14 +53,11 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
             console.log("Geocoding response (city only):", data);
           }
         }
-        
+
         // Estratégia 3: Se ainda não encontrar, usa coordenadas padrão para Feira de Santana
         if (!data || data.length === 0) {
-          console.log("Using default coordinates for Feira de Santana");
-          setCoordinates({
-            lat: -12.2577,
-            lon: -38.9668
-          });
+          setError("Não foi possível localizar este endereço no mapa. Isso pode ocorrer por instabilidade ou bloqueio temporário do serviço de mapas. Por favor, tente novamente mais tarde.");
+          setCoordinates(null);
         } else {
           const location = data[0];
           setCoordinates({
@@ -67,14 +65,10 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
             lon: parseFloat(location.lon)
           });
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Geocoding error:", err);
-        // Em caso de erro, usa coordenadas padrão
-        console.log("Using fallback coordinates due to error");
-        setCoordinates({
-          lat: -12.2577,
-          lon: -38.9668
-        });
+        setError("Erro ao buscar a localização do evento. O serviço de mapas pode estar temporariamente indisponível.");
+        setCoordinates(null);
       } finally {
         setLoading(false);
       }
@@ -88,7 +82,7 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
   // Generate the map URL with the actual coordinates
   const getMapUrl = () => {
     if (!coordinates) return null;
-    
+
     const { lat, lon } = coordinates;
     const zoom = 15;
     const bbox = [
@@ -97,7 +91,7 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
       lon + 0.01, // east
       lat + 0.01  // north
     ].join(',');
-    
+
     return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
   };
 
@@ -109,14 +103,23 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
         <MapPin className="h-5 w-5" />
         <span>{address}</span>
       </div>
-      
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-5 w-5" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <Loader2 className="h-6 w-6 animate-spin" />
             <span className="ml-2 text-sm">Carregando mapa...</span>
           </div>
-        ) : mapUrl ? (
+        ) : mapUrl && !error ? (
           <iframe
             title="Event Location"
             width="100%"
@@ -128,15 +131,17 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
             src={mapUrl}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <div className="text-center">
-              <MapPin className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Localização não disponível</p>
+          !loading && !mapUrl && !error && (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <div className="text-center">
+                <MapPin className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Localização não disponível</p>
+              </div>
             </div>
-          </div>
+          )
         )}
       </div>
-      
+
       <div className="flex flex-wrap gap-2">
         <Button asChild variant="outline" size="sm" className="flex-1">
           <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
@@ -156,3 +161,4 @@ const MapLocation: React.FC<MapLocationProps> = ({ address, className = "" }) =>
 };
 
 export default MapLocation;
+
