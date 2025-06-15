@@ -18,9 +18,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useSupabaseEvents } from "@/hooks/useSupabaseEvents";
 
-interface UserEvent {
+interface Event {
   id: string;
   title: string;
   description: string;
@@ -33,73 +33,73 @@ interface UserEvent {
   image?: string;
   status: string;
   creator_name: string;
-  social_media: any;
+  social_media?: any;
 }
 
 const UserEvents = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useSupabaseAuth();
-  const [events, setEvents] = useState<UserEvent[]>([]);
+  const { getUserEvents, deleteEvent } = useSupabaseEvents();
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchUserEvents = async () => {
-    if (!user) {
-      console.log('👤 [UserEvents] Usuário não logado');
-      setLoading(false);
-      return;
-    }
-
-    console.log('🔍 [UserEvents] Buscando eventos do usuário:', user.id);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false });
-
-      console.log('📊 [UserEvents] Resultado da busca:', {
-        data: data,
-        error: fetchError,
-        userId: user.id,
-        eventCount: data?.length || 0
-      });
-
-      if (fetchError) {
-        console.error('❌ [UserEvents] Erro ao buscar eventos:', fetchError);
-        setError(`Erro ao buscar eventos: ${fetchError.message}`);
-        setEvents([]);
-      } else {
-        console.log('✅ [UserEvents] Eventos encontrados:', data?.length || 0);
-        setEvents(data || []);
-      }
-    } catch (exception) {
-      console.error('💥 [UserEvents] Exceção ao buscar eventos:', exception);
-      setError(`Erro na conexão: ${exception}`);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-      console.log('🏁 [UserEvents] Busca finalizada');
-    }
-  };
 
   useEffect(() => {
-    console.log('🚀 [UserEvents] useEffect disparado, user:', user?.id);
+    const fetchUserEvents = async () => {
+      if (!user) {
+        console.log('👤 [UserEvents] Usuário não logado');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('🔍 [UserEvents] Buscando eventos do usuário:', user.id);
+      setLoading(true);
+      
+      try {
+        const { data, error } = await getUserEvents(user.id);
+        
+        console.log('📊 [UserEvents] Resultado da busca:', { 
+          count: data?.length || 0, 
+          hasError: !!error,
+          data: data 
+        });
+        
+        if (error) {
+          console.error('❌ [UserEvents] Erro ao buscar eventos:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar eventos",
+            description: "Não foi possível carregar seus eventos.",
+          });
+          setEvents([]);
+        } else if (data) {
+          console.log('✅ [UserEvents] Eventos carregados:', data.length);
+          setEvents(data as Event[]);
+        } else {
+          console.log('📭 [UserEvents] Nenhum evento encontrado');
+          setEvents([]);
+        }
+      } catch (exception) {
+        console.error('💥 [UserEvents] Exceção:', exception);
+        toast({
+          variant: "destructive",
+          title: "Erro inesperado",
+          description: "Ocorreu um erro ao carregar os eventos.",
+        });
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchUserEvents();
-  }, [user]);
+  }, [user, getUserEvents, toast]);
 
   const handleDeleteEvent = async (id: string) => {
     console.log('🗑️ [UserEvents] Deletando evento:', id);
     
     try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', id);
+      const { error } = await deleteEvent(id);
       
       if (error) {
         console.error('❌ [UserEvents] Erro ao deletar:', error);
@@ -120,8 +120,8 @@ const UserEvents = () => {
       console.error('💥 [UserEvents] Exceção ao deletar:', exception);
       toast({
         variant: "destructive",
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir o evento.",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao excluir o evento.",
       });
     }
   };
@@ -130,8 +130,26 @@ const UserEvents = () => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="default">Aprovado</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pendente</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejeitado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  console.log('🎭 [UserEvents] Estado atual:', { 
+    userLoggedIn: !!user,
+    eventCount: events.length, 
+    loading 
+  });
+
   if (loading) {
-    console.log('⏳ [UserEvents] Renderizando loading...');
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -139,21 +157,22 @@ const UserEvents = () => {
     );
   }
 
-  if (error) {
-    console.log('❌ [UserEvents] Renderizando erro:', error);
+  if (!user) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-500 mb-4">
-          <p>Erro ao carregar eventos:</p>
-          <p className="text-sm">{error}</p>
-        </div>
-        <Button onClick={fetchUserEvents}>Tentar novamente</Button>
+        <CalendarCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium mb-1">Acesso negado</h3>
+        <p className="text-muted-foreground mb-4">
+          Você precisa estar logado para ver seus eventos.
+        </p>
+        <Button onClick={() => navigate("/login")}>
+          Fazer Login
+        </Button>
       </div>
     );
   }
 
   if (events.length === 0) {
-    console.log('📭 [UserEvents] Nenhum evento encontrado');
     return (
       <div className="text-center py-12">
         <CalendarCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -167,8 +186,6 @@ const UserEvents = () => {
       </div>
     );
   }
-
-  console.log('🎪 [UserEvents] Renderizando', events.length, 'eventos');
 
   return (
     <div className="space-y-6">
@@ -247,10 +264,7 @@ const UserEvents = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">Status:</span>
-                  <Badge variant={event.status === "approved" ? "default" : "secondary"}>
-                    {event.status === "approved" ? "Aprovado" : 
-                     event.status === "pending" ? "Pendente" : "Rejeitado"}
-                  </Badge>
+                  {getStatusBadge(event.status)}
                 </div>
               </div>
             </div>
