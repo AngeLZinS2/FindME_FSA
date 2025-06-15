@@ -20,47 +20,27 @@ interface CreateEventData {
 export const useSupabaseEvents = () => {
   const [events, setEvents] = useState<EventProps[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = async () => {
     console.log('🔍 Iniciando busca por eventos...');
     setLoading(true);
+    setError(null);
     
     try {
-      // Primeiro, vamos buscar TODOS os eventos para debug
-      console.log('🔍 Buscando TODOS os eventos primeiro...');
-      const { data: allData, error: allError } = await supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
-
-      console.log('📊 TODOS os eventos:', { data: allData, error: allError });
-
-      if (allError) {
-        console.error('❌ Erro ao buscar todos os eventos:', allError);
-      } else {
-        console.log(`📈 Total de eventos no banco: ${allData?.length || 0}`);
-        if (allData && allData.length > 0) {
-          console.log('🔍 Status dos eventos encontrados:');
-          const statusCount = allData.reduce((acc: any, event) => {
-            acc[event.status] = (acc[event.status] || 0) + 1;
-            return acc;
-          }, {});
-          console.log('📊 Contagem por status:', statusCount);
-        }
-      }
-
-      // Agora buscar apenas os aprovados
       console.log('🔍 Buscando eventos com status "approved"...');
+      
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('status', 'approved')
         .order('date', { ascending: true });
 
-      console.log('📊 Resultado da consulta de eventos aprovados:', { data, error });
+      console.log('📊 Resultado da consulta:', { data, error });
 
       if (error) {
-        console.error('❌ Erro ao buscar eventos aprovados:', error);
+        console.error('❌ Erro ao buscar eventos:', error);
+        setError(`Erro ao buscar eventos: ${error.message}`);
         setEvents([]);
         return;
       }
@@ -71,12 +51,11 @@ export const useSupabaseEvents = () => {
         return;
       }
 
-      console.log(`📈 Número de eventos aprovados encontrados: ${data.length}`);
+      console.log(`📈 Eventos encontrados: ${data.length}`);
       
       const formattedEvents: EventProps[] = data.map((event) => {
-        console.log('🔄 Processando evento:', event.title);
+        console.log('🔄 Formatando evento:', event.title);
         
-        // Safely parse social_media from Json to SocialMediaLink[]
         let socialMedia: SocialMediaLink[] = [];
         try {
           if (Array.isArray(event.social_media)) {
@@ -87,11 +66,11 @@ export const useSupabaseEvents = () => {
             }));
           }
         } catch (e) {
-          console.warn('⚠️ Erro ao processar social media do evento:', event.title, e);
+          console.warn('⚠️ Erro ao processar social media:', e);
           socialMedia = [];
         }
 
-        const formattedEvent: EventProps = {
+        return {
           id: event.id,
           title: event.title,
           description: event.description,
@@ -99,24 +78,19 @@ export const useSupabaseEvents = () => {
           date: event.date,
           time: event.time,
           capacity: event.capacity,
-          attendees: 0, // We'll need to count from event_attendees table
+          attendees: 0,
           category: event.category,
           image: event.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop",
           socialMedia,
         };
-        
-        console.log('✅ Evento formatado:', formattedEvent);
-        return formattedEvent;
       });
       
-      console.log('✅ Todos os eventos formatados:', formattedEvents);
-      console.log('📝 Definindo eventos no state com', formattedEvents.length, 'eventos...');
-      
+      console.log('✅ Eventos formatados:', formattedEvents);
       setEvents(formattedEvents);
-      console.log('📝 State de eventos atualizado');
       
     } catch (exception) {
       console.error('💥 Exceção ao buscar eventos:', exception);
+      setError(`Exceção: ${exception}`);
       setEvents([]);
     } finally {
       setLoading(false);
@@ -128,7 +102,6 @@ export const useSupabaseEvents = () => {
     console.log('useSupabaseEvents createEvent called with:', { eventData, creatorId, creatorName });
     
     try {
-      // Convert SocialMediaLink[] to Json format for database
       const socialMediaJson = eventData.socialMedia ? JSON.parse(JSON.stringify(eventData.socialMedia)) : [];
       
       console.log('Inserting event into database...');
@@ -152,7 +125,6 @@ export const useSupabaseEvents = () => {
         });
 
       console.log('Database response:', { data, error });
-
       return { data, error };
     } catch (exception) {
       console.error('Exception in createEvent:', exception);
@@ -187,6 +159,7 @@ export const useSupabaseEvents = () => {
   return {
     events,
     loading,
+    error,
     fetchEvents,
     createEvent,
     getUserEvents,

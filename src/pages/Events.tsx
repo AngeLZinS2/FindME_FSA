@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import EventCard, { EventProps } from "@/components/EventCard";
+import EventCardSkeleton from "@/components/EventCardSkeleton";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import EventFilters from "@/components/EventFilters";
 import { useEventsList } from "@/hooks/useEventsList";
@@ -26,22 +29,13 @@ const EventsPage = () => {
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const [sortOrder, setSortOrder] = useState("date-asc");
   
-  const { events: eventsList, loading } = useEventsList();
+  const { events: eventsList, loading, error } = useEventsList();
   
-  console.log('🎭 Dados recebidos do hook:');
-  console.log('- Eventos:', eventsList);
-  console.log('- Quantidade:', eventsList?.length || 0);
-  console.log('- Loading:', loading);
-  console.log('- Tipo dos eventos:', typeof eventsList);
-  console.log('- É array?', Array.isArray(eventsList));
-  
-  useEffect(() => {
-    console.log('🔄 useEffect da página - eventos atualizados:', eventsList);
-  }, [eventsList]);
-
-  useEffect(() => {
-    console.log('🔄 useEffect da página - loading atualizado:', loading);
-  }, [loading]);
+  console.log('🎭 Status atual:', {
+    eventos: eventsList?.length || 0,
+    loading,
+    error
+  });
 
   const filteredEvents = eventsList.filter((event) => {
     const matchesSearch = 
@@ -59,8 +53,6 @@ const EventsPage = () => {
     
     return matchesSearch && matchesCategory && matchesCapacity && matchesAvailability;
   });
-
-  console.log('🔍 Eventos após filtros:', filteredEvents);
 
   const sortedEvents = [...filteredEvents].sort((a, b) => {
     switch(sortOrder) {
@@ -82,8 +74,6 @@ const EventsPage = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
-
-  console.log('📄 Eventos paginados para exibir:', paginatedEvents);
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
@@ -115,36 +105,66 @@ const EventsPage = () => {
     setSearchParams({ page: "1" });
   };
 
+  // Renderizar loading com skeletons
+  if (loading) {
+    return (
+      <div className="py-12">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
+          
+          <div className="flex flex-col md:flex-row gap-4 bg-accent/50 p-4 rounded-lg mb-6">
+            <div className="relative flex-grow">
+              <Input
+                placeholder="Buscar eventos..."
+                className="pl-10"
+                disabled
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+            </div>
+          </div>
+          
+          <div className="text-center py-4 mb-6">
+            <p className="text-muted-foreground">Carregando eventos...</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }, (_, i) => (
+              <EventCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Renderizar erro se houver
+  if (error) {
+    return (
+      <div className="py-12">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
+          
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error}
+            </AlertDescription>
+          </Alert>
+          
+          <div className="text-center py-12">
+            <Button onClick={() => window.location.reload()}>
+              Tentar Novamente
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-12">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl md:text-4xl font-bold mb-6">Descubra Eventos</h1>
-        
-        {/* Debug info for development */}
-        <div className="mb-4 p-3 bg-muted rounded-lg text-sm">
-          <p><strong>Debug Info:</strong></p>
-          <p>• Total eventos: {eventsList?.length || 0}</p>
-          <p>• Loading: {loading ? 'Sim' : 'Não'}</p>
-          <p>• Eventos após filtros: {filteredEvents?.length || 0}</p>
-          <p>• Eventos paginados: {paginatedEvents?.length || 0}</p>
-          <p>• Tipo eventsList: {typeof eventsList}</p>
-          <p>• É array: {Array.isArray(eventsList) ? 'Sim' : 'Não'}</p>
-        </div>
-        
-        {/* Show loading state */}
-        {loading && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">Carregando eventos...</p>
-          </div>
-        )}
-        
-        {/* Show debug info in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-3 bg-muted rounded-lg text-sm">
-            <p>Debug: {eventsList.length} eventos carregados</p>
-            <p>Loading: {loading ? 'Sim' : 'Não'}</p>
-          </div>
-        )}
         
         <div className="flex flex-col md:flex-row gap-4 bg-accent/50 p-4 rounded-lg mb-6">
           <div className="relative flex-grow">
@@ -242,7 +262,7 @@ const EventsPage = () => {
           </div>
         )}
         
-        {!loading && paginatedEvents.length > 0 ? (
+        {paginatedEvents.length > 0 ? (
           <>
             <div className="mb-6 flex justify-between items-center">
               <p className="text-muted-foreground">
@@ -262,56 +282,57 @@ const EventsPage = () => {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedEvents.map((event) => {
-                console.log('🎫 Renderizando evento:', event.title, event);
-                return <EventCard key={event.id} event={event} />;
-              })}
+              {paginatedEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
             </div>
             
-            <Pagination className="mt-8">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                    className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => 
-                    page === 1 || 
-                    page === totalPages || 
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  )
-                  .map((page, index, array) => (
-                    <React.Fragment key={page}>
-                      {index > 0 && array[index - 1] !== page - 1 && (
+            {totalPages > 1 && (
+              <Pagination className="mt-8">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => 
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    )
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <PaginationItem>
+                            <span className="flex h-9 w-9 items-center justify-center">...</span>
+                          </PaginationItem>
+                        )}
                         <PaginationItem>
-                          <span className="flex h-9 w-9 items-center justify-center">...</span>
+                          <PaginationLink 
+                            onClick={() => handlePageChange(page)}
+                            isActive={currentPage === page}
+                          >
+                            {page}
+                          </PaginationLink>
                         </PaginationItem>
-                      )}
-                      <PaginationItem>
-                        <PaginationLink 
-                          onClick={() => handlePageChange(page)}
-                          isActive={currentPage === page}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    </React.Fragment>
-                  ))
-                }
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                    className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+                      </React.Fragment>
+                    ))
+                  }
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                      className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </>
-        ) : !loading ? (
+        ) : (
           <div className="text-center py-12">
             <h3 className="text-2xl font-semibold mb-2">Nenhum evento encontrado</h3>
             <p className="text-muted-foreground mb-6">
@@ -321,7 +342,7 @@ const EventsPage = () => {
               Limpar Todos os Filtros
             </Button>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
