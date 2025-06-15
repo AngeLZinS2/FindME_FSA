@@ -21,39 +21,23 @@ export const useSupabaseEvents = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = async () => {
-    console.log('🔍 Iniciando busca por eventos...');
+    console.log('🔍 Iniciando busca por eventos aprovados...');
     setLoading(true);
     
     try {
-      // Primeiro, vamos ver TODOS os eventos para debug
-      const { data: allEvents, error: allEventsError } = await supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
-
-      console.log('📊 TODOS os eventos no banco:', { data: allEvents, error: allEventsError });
-      
-      if (allEvents && allEvents.length > 0) {
-        console.log('📋 Status dos eventos encontrados:');
-        allEvents.forEach(event => {
-          console.log(`- ${event.title}: status="${event.status}"`);
-        });
-      }
-
-      // Agora buscar especificamente os aprovados
-      console.log('🔍 Buscando eventos com status = "approved"...');
+      console.log('🔍 Buscando eventos com status "approved"...');
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('status', 'approved')
         .order('date', { ascending: true });
 
-      console.log('📊 Resultado da consulta de eventos aprovados:', { data, error });
+      console.log('📊 Resultado da consulta:', { data, error });
 
       if (error) {
         console.error('❌ Erro ao buscar eventos:', error);
         setEvents([]);
-      } else if (data) {
+      } else if (data && data.length > 0) {
         console.log(`📈 Número de eventos aprovados encontrados: ${data.length}`);
         
         const formattedEvents: EventProps[] = data.map(event => {
@@ -101,6 +85,7 @@ export const useSupabaseEvents = () => {
     }
     
     setLoading(false);
+    console.log('🏁 Busca finalizada, loading=false');
   };
 
   const createEvent = async (eventData: CreateEventData, creatorId: string, creatorName: string) => {
