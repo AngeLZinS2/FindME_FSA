@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Filter, X, AlertCircle } from "lucide-react";
@@ -15,6 +16,14 @@ import { useEventsList } from "@/hooks/useEventsList";
 const ITEMS_PER_PAGE = 6;
 
 const EventsPage = () => {
+  // Montagem/desmontagem log
+  useEffect(() => {
+    console.log("[EventsPage] COMPONENTE MONTADO");
+    return () => {
+      console.log("[EventsPage] COMPONENTE DESMONTADO");
+    }
+  }, []);
+  
   console.log('🎪 EventsPage renderizando...');
   
   const [searchParams, setSearchParams] = useSearchParams();
@@ -363,3 +372,4 @@ const EventsPage = () => {
 };
 
 export default EventsPage;
+
