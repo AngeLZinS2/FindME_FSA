@@ -22,12 +22,12 @@ export const useSupabaseEvents = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = async () => {
-    console.log('🔍 [useSupabaseEvents] Iniciando busca por eventos aprobados...');
+    console.log('🔍 [useSupabaseEvents] Iniciando busca por eventos aprovados...');
     setLoading(true);
     setError(null);
 
     try {
-      // Versão DEBUG: buscar todos os eventos, sem filtro de approved
+      // DEBUG: Buscar todos os eventos, sem filtro de approved (extra log defensivo)
       const { data: allEvents, error: allError } = await supabase
         .from('events')
         .select('*')
@@ -35,17 +35,18 @@ export const useSupabaseEvents = () => {
 
       console.log('🐞 [DEBUG] Todos os eventos encontrados:', allEvents?.length, allEvents);
 
-      const { data: events, error: eventsError } = await supabase
+      // Buscar eventos aprovados
+      const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('*')
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
       console.log('📊 [useSupabaseEvents] Resultado da busca filtrada:', {
-        rawEvents: events,
-        count: events?.length || 0,
+        rawEvents: eventsData,
+        count: eventsData?.length || 0,
         hasError: !!eventsError,
-        firstEvent: events?.[0]?.title || 'Nenhum',
+        firstEvent: eventsData?.[0]?.title || 'Nenhum',
       });
 
       if (allError) {
@@ -60,14 +61,24 @@ export const useSupabaseEvents = () => {
         return;
       }
 
-      if (!events || events.length === 0) {
+      // Handle resposta inesperada (null, undefined, objeto estranho)
+      if (!Array.isArray(eventsData)) {
+        console.error('❌ [useSupabaseEvents] Resposta inesperada do Supabase para eventos aprovados:', eventsData);
+        setError('Resposta inesperada do servidor ao buscar eventos.');
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
+      if (eventsData.length === 0) {
         setEvents([]);
         setLoading(false);
         console.warn('📭 [useSupabaseEvents] Nenhum evento aprovado encontrado');
         return;
       }
 
-      const formattedEvents: EventProps[] = events.map((event) => {
+      // Formatação dos eventos
+      const formattedEvents: EventProps[] = eventsData.map((event) => {
         let socialMedia = [];
         try {
           if (Array.isArray(event.social_media)) {
