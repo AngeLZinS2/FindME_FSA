@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { CalendarCheck, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useSupabaseEvents } from "@/hooks/useSupabaseEvents";
-import { SocialMediaLink } from "@/components/SocialMediaInputs";
-import { Json } from "@/integrations/supabase/types";
 
 interface Event {
   id: string;
@@ -34,7 +33,7 @@ interface Event {
   image?: string;
   status: string;
   creator_name: string;
-  social_media: Json;
+  social_media?: any;
 }
 
 const UserEvents = () => {
@@ -47,36 +46,82 @@ const UserEvents = () => {
 
   useEffect(() => {
     const fetchUserEvents = async () => {
-      if (!user) return;
-      
-      setLoading(true);
-      const { data, error } = await getUserEvents(user.id);
-      
-      if (data && !error) {
-        setEvents(data as Event[]);
-      } else if (error) {
-        console.error("Error fetching user events:", error);
+      if (!user) {
+        console.log('👤 [UserEvents] Usuário não logado');
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+      
+      console.log('🔍 [UserEvents] Buscando eventos do usuário:', user.id);
+      setLoading(true);
+      
+      try {
+        const { data, error } = await getUserEvents(user.id);
+        
+        console.log('📊 [UserEvents] Resultado da busca:', { 
+          count: data?.length || 0, 
+          hasError: !!error,
+          data: data 
+        });
+        
+        if (error) {
+          console.error('❌ [UserEvents] Erro ao buscar eventos:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar eventos",
+            description: "Não foi possível carregar seus eventos.",
+          });
+          setEvents([]);
+        } else if (data) {
+          console.log('✅ [UserEvents] Eventos carregados:', data.length);
+          setEvents(data as Event[]);
+        } else {
+          console.log('📭 [UserEvents] Nenhum evento encontrado');
+          setEvents([]);
+        }
+      } catch (exception) {
+        console.error('💥 [UserEvents] Exceção:', exception);
+        toast({
+          variant: "destructive",
+          title: "Erro inesperado",
+          description: "Ocorreu um erro ao carregar os eventos.",
+        });
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchUserEvents();
-  }, [user, getUserEvents]);
+  }, [user, getUserEvents, toast]);
 
   const handleDeleteEvent = async (id: string) => {
-    const { error } = await deleteEvent(id);
+    console.log('🗑️ [UserEvents] Deletando evento:', id);
     
-    if (error) {
+    try {
+      const { error } = await deleteEvent(id);
+      
+      if (error) {
+        console.error('❌ [UserEvents] Erro ao deletar:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir",
+          description: "Não foi possível excluir o evento.",
+        });
+      } else {
+        console.log('✅ [UserEvents] Evento deletado com sucesso');
+        setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+        toast({
+          title: "Evento excluído",
+          description: "O evento foi removido com sucesso.",
+        });
+      }
+    } catch (exception) {
+      console.error('💥 [UserEvents] Exceção ao deletar:', exception);
       toast({
         variant: "destructive",
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir o evento.",
-      });
-    } else {
-      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-      toast({
-        title: "Evento excluído",
-        description: "O evento foi removido com sucesso.",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao excluir o evento.",
       });
     }
   };
@@ -85,10 +130,44 @@ const UserEvents = () => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="default">Aprovado</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pendente</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejeitado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  console.log('🎭 [UserEvents] Estado atual:', { 
+    userLoggedIn: !!user,
+    eventCount: events.length, 
+    loading 
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <CalendarCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium mb-1">Acesso negado</h3>
+        <p className="text-muted-foreground mb-4">
+          Você precisa estar logado para ver seus eventos.
+        </p>
+        <Button onClick={() => navigate("/login")}>
+          Fazer Login
+        </Button>
       </div>
     );
   }
@@ -185,10 +264,7 @@ const UserEvents = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">Status:</span>
-                  <Badge variant={event.status === "approved" ? "default" : "secondary"}>
-                    {event.status === "approved" ? "Aprovado" : 
-                     event.status === "pending" ? "Pendente" : "Rejeitado"}
-                  </Badge>
+                  {getStatusBadge(event.status)}
                 </div>
               </div>
             </div>
