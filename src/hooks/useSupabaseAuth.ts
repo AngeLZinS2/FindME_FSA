@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { cleanupAuthState } from '@/utils/authCleanup';
 
 interface AuthUser {
   id: string;
@@ -16,14 +17,19 @@ export const useSupabaseAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
 
     const handleAuthStateChange = async (event: string, session: Session | null) => {
-      console.log('Auth state change:', event, session?.user?.email);
+      console.log('🔐 [useSupabaseAuth] Auth state change:', event, session?.user?.email);
       
-      if (!mounted) return;
+      if (!mounted) {
+        console.log('⚠️ [useSupabaseAuth] Component unmounted, ignoring auth change');
+        return;
+      }
       
       setSession(session);
       
@@ -44,10 +50,10 @@ export const useSupabaseAuth = () => {
               phone: userProfile.phone,
               city: userProfile.city,
             };
-            console.log('Setting user profile:', authUser);
+            console.log('✅ [useSupabaseAuth] Setting user profile:', authUser.name);
             setUser(authUser);
           } else {
-            console.log('User profile not found, creating basic user');
+            console.log('⚠️ [useSupabaseAuth] User profile not found, creating basic user');
             const basicUser: AuthUser = {
               id: session.user.id,
               email: session.user.email || '',
@@ -57,7 +63,7 @@ export const useSupabaseAuth = () => {
             setUser(basicUser);
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          console.error('❌ [useSupabaseAuth] Error fetching user profile:', error);
           const basicUser: AuthUser = {
             id: session.user.id,
             email: session.user.email || '',
@@ -67,43 +73,75 @@ export const useSupabaseAuth = () => {
           setUser(basicUser);
         }
       } else {
+        console.log('👤 [useSupabaseAuth] No session, clearing user');
         setUser(null);
       }
       
-      if (mounted) {
+      if (mounted && !initialized) {
         setLoading(false);
+        setInitialized(true);
+        console.log('🏁 [useSupabaseAuth] Auth initialization complete');
       }
     };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-
-    // Check for existing session only once on mount
-    const checkInitialSession = async () => {
+    const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('🚀 [useSupabaseAuth] Initializing auth...');
+        
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+        authSubscription = subscription;
+
+        // Check for existing session only once
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ [useSupabaseAuth] Error getting session:', error);
+          // Clean up any corrupted auth state
+          cleanupAuthState();
+          if (mounted) {
+            setLoading(false);
+            setInitialized(true);
+          }
+          return;
+        }
+
         if (session && mounted) {
+          console.log('📱 [useSupabaseAuth] Found existing session for:', session.user?.email);
           await handleAuthStateChange('INITIAL_SESSION', session);
         } else if (mounted) {
+          console.log('📭 [useSupabaseAuth] No existing session found');
           setLoading(false);
+          setInitialized(true);
         }
-      } catch (error) {
-        console.error('Error checking session:', error);
-        if (mounted) setLoading(false);
+      } catch (exception) {
+        console.error('💥 [useSupabaseAuth] Exception during initialization:', exception);
+        cleanupAuthState();
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
-    checkInitialSession();
+    initializeAuth();
 
     return () => {
+      console.log('🧹 [useSupabaseAuth] Cleanup hook');
       mounted = false;
-      subscription.unsubscribe();
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
     };
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const signUp = async (email: string, password: string, name: string, userType: string) => {
     try {
       setLoading(true);
+      console.log('📝 [useSupabaseAuth] Signing up:', email);
+      
+      // Clean up before sign up
+      cleanupAuthState();
       
       const redirectUrl = `${window.location.origin}/`;
       
@@ -126,13 +164,13 @@ export const useSupabaseAuth = () => {
           });
 
         if (profileError) {
-          console.error('Error creating user profile:', profileError);
+          console.error('❌ [useSupabaseAuth] Error creating user profile:', profileError);
         }
       }
 
       return { data, error };
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('❌ [useSupabaseAuth] Signup error:', error);
       return { data: null, error };
     } finally {
       setLoading(false);
@@ -142,17 +180,35 @@ export const useSupabaseAuth = () => {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      console.log('Attempting signIn for:', email);
+      console.log('🔑 [useSupabaseAuth] Attempting signIn for:', email);
+      
+      // Clean up existing state first
+      cleanupAuthState();
+      
+      // Attempt global sign out to clear any existing sessions
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('⚠️ [useSupabaseAuth] Error during cleanup signout (continuing):', err);
+      }
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('SignIn response:', { data: !!data, error });
+      console.log('🔐 [useSupabaseAuth] SignIn response:', { success: !!data.user, error: !!error });
+      
+      if (data.user && !error) {
+        // Force page reload for clean state
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
+      }
+      
       return { data, error };
     } catch (error) {
-      console.error('Signin error:', error);
+      console.error('❌ [useSupabaseAuth] Signin error:', error);
       return { data: null, error };
     } finally {
       setLoading(false);
@@ -162,15 +218,28 @@ export const useSupabaseAuth = () => {
   const signOut = async () => {
     try {
       setLoading(true);
+      console.log('🚪 [useSupabaseAuth] Signing out...');
       
+      // Clean up auth state first
+      cleanupAuthState();
+      
+      // Clear state immediately
       setUser(null);
       setSession(null);
       
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('⚠️ [useSupabaseAuth] Error during signout (continuing):', err);
+      }
       
-      return { error };
+      // Force page reload for clean state
+      window.location.href = '/';
+      
+      return { error: null };
     } catch (error) {
-      console.error('Signout error:', error);
+      console.error('❌ [useSupabaseAuth] Signout error:', error);
       return { error };
     } finally {
       setLoading(false);
@@ -196,7 +265,7 @@ export const useSupabaseAuth = () => {
 
       return { data, error };
     } catch (error) {
-      console.error('Update profile error:', error);
+      console.error('❌ [useSupabaseAuth] Update profile error:', error);
       return { data: null, error };
     }
   };
