@@ -38,47 +38,81 @@ const Events = () => {
   });
 
   return (
-    <div className="container mx-auto py-12">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="md:w-1/4">
-          <div className="mb-4">
-            <Input
-              type="search"
-              placeholder="Buscar evento..."
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </div>
-          <EventFilters
-            selectedCategory={selectedCategory}
-            selectedLocation={selectedLocation}
-            onCategoryChange={handleCategoryChange}
-            onLocationChange={handleLocationChange}
-          />
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Descubra Eventos Incríveis
+          </h1>
+          <p className="text-xl text-gray-600">
+            Encontre experiências únicas perto de você
+          </p>
         </div>
-        <div className="md:w-3/4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading ? (
-              <>
-                <EventCardSkeleton />
-                <EventCardSkeleton />
-                <EventCardSkeleton />
-              </>
-            ) : filteredEvents.length > 0 ? (
-              filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-8">
-                <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">
-                  Nenhum evento encontrado
-                </h3>
-                <p className="text-muted-foreground">
-                  Tente ajustar os filtros ou o termo de busca.
-                </p>
+        
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar de Filtros */}
+          <div className="lg:w-1/4">
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h3 className="text-lg font-semibold mb-4">Buscar Eventos</h3>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Input
+                  type="search"
+                  placeholder="Digite o nome do evento..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  className="pl-10"
+                />
               </div>
-            )}
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <EventFilters
+                selectedCategory={selectedCategory}
+                selectedLocation={selectedLocation}
+                onCategoryChange={handleCategoryChange}
+                onLocationChange={handleLocationChange}
+              />
+            </div>
+          </div>
+
+          {/* Grid de Eventos */}
+          <div className="lg:w-3/4">
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                {filteredEvents.length} eventos encontrados
+              </h2>
+              <div className="h-1 w-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded"></div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {loading ? (
+                <>
+                  <EventCardSkeleton />
+                  <EventCardSkeleton />
+                  <EventCardSkeleton />
+                  <EventCardSkeleton />
+                  <EventCardSkeleton />
+                  <EventCardSkeleton />
+                </>
+              ) : filteredEvents.length > 0 ? (
+                filteredEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <div className="bg-white rounded-lg shadow-md p-8 max-w-md mx-auto">
+                    <Search className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-900 mb-2">
+                      Nenhum evento encontrado
+                    </h3>
+                    <p className="text-gray-600">
+                      Tente ajustar os filtros ou o termo de busca para encontrar eventos que correspondam aos seus interesses.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
