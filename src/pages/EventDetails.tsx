@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Calendar, MapPin, Users, Clock, DollarSign, ArrowLeft } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +62,6 @@ const EventDetails = () => {
     if (!id) return;
     
     console.log('🎯 [EventDetails] Iniciando ação de participação...', { isParticipating });
-    setParticipationLoading(true);
 
     try {
       if (isParticipating) {
@@ -81,7 +82,6 @@ const EventDetails = () => {
     } catch (e) {
       console.error("❌ [EventDetails] Erro ao participar/cancelar:", e);
     } finally {
-      setParticipationLoading(false);
       console.log('🏁 [EventDetails] Ação de participação finalizada');
     }
   };
@@ -227,10 +227,10 @@ const EventDetails = () => {
                     <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
                       <p className="font-medium">
-                        {format(eventDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        {format(new Date(event.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {format(eventDate, "EEEE", { locale: ptBR })}
+                        {format(new Date(event.date), "EEEE", { locale: ptBR })}
                       </p>
                     </div>
                   </div>
@@ -277,10 +277,14 @@ const EventDetails = () => {
                   <Button
                     className="w-full"
                     onClick={handleParticipation}
-                    disabled={isButtonDisabled()}
-                    variant={getButtonVariant()}
+                    disabled={checkingParticipation || participationLoading}
+                    variant={!user || (event.capacity <= attendeesCount && !isParticipating) ? "outline" : isParticipating ? "destructive" : "default"}
                   >
-                    {getButtonText()}
+                    {checkingParticipation ? "Verificando..." : 
+                     participationLoading ? "Carregando..." :
+                     !user ? "Fazer login para participar" :
+                     attendeesCount >= event.capacity && !isParticipating ? "Entrar na lista de espera" :
+                     isParticipating ? "Cancelar participação" : "Participar do evento"}
                   </Button>
 
                   {user && !isEventPast && !checkingParticipation && !participationLoading && (

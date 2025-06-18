@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,8 @@ const Events = () => {
             />
           </div>
           <EventFilters
+            selectedCategory={selectedCategory}
+            selectedLocation={selectedLocation}
             onCategoryChange={handleCategoryChange}
             onLocationChange={handleLocationChange}
           />
