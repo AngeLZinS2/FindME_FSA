@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { MapPin, Navigation, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,16 @@ const NearbyEvents = () => {
           // Incluir eventos dentro do raio definido pelo usuário
           if (distance <= radiusInKm) {
             eventsWithDistance.push({
-              ...event,
+              id: event.id,
+              title: event.title,
+              description: event.description,
+              location: event.location,
+              date: event.date,
+              time: event.time,
+              capacity: event.capacity,
+              category: event.category,
+              image: event.image,
+              socialMedia: event.socialMedia,
               distance: distance
             });
           }
@@ -73,7 +83,7 @@ const NearbyEvents = () => {
     if (km < 1) {
       return `${Math.round(km * 1000)}m`;
     }
-    return `${km}km`;
+    return `${km.toFixed(1)}km`;
   };
 
   const formatRadius = (km: number) => {

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import SocialMediaLinks from "./SocialMediaLinks";
 import { SocialMediaLink } from "./SocialMediaInputs";
-import { useEventAttendees } from "@/hooks/useEventAttendees";
+import { useMockEventAttendees } from "@/hooks/useMockEventAttendees";
 
 export interface EventProps {
   id: string;
@@ -17,7 +17,6 @@ export interface EventProps {
   date: string;
   time: string;
   capacity: number;
-  attendees: number;
   category: string;
   image?: string;
   socialMedia?: SocialMediaLink[];
@@ -37,10 +36,10 @@ const EventCard: React.FC<{ event: EventProps }> = ({ event }) => {
     socialMedia = [],
   } = event;
 
-  const { attendeesCount, loading: attendeesLoading } = useEventAttendees(id);
+  const { attendeesCount, loading: attendeesLoading } = useMockEventAttendees(id);
   
-  // Usar a contagem real ou fallback para o valor do evento
-  const currentAttendees = attendeesLoading ? event.attendees : attendeesCount;
+  // Usar a contagem real do hook mock
+  const currentAttendees = attendeesLoading ? 0 : attendeesCount;
   const capacityPercentage = (currentAttendees / capacity) * 100;
   const isAlmostFull = capacityPercentage >= 80;
   const isFull = currentAttendees >= capacity;

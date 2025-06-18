@@ -13,12 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useMockAuth } from "@/hooks/useMockAuth";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, signOut } = useSupabaseAuth();
+  const { user, signOut } = useMockAuth();
 
   const handleLogout = async () => {
     await signOut();
