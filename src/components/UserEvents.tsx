@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { CalendarCheck, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +16,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useMockAuth } from "@/hooks/useMockAuth";
+import { useMockEvents } from "@/hooks/useMockEvents";
 
 interface UserEvent {
   id: string;
@@ -39,7 +38,8 @@ interface UserEvent {
 const UserEvents = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useSupabaseAuth();
+  const { user } = useMockAuth();
+  const { getUserEvents, deleteEvent } = useMockEvents();
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,18 +56,7 @@ const UserEvents = () => {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false });
-
-      console.log('📊 [UserEvents] Resultado da busca:', {
-        data: data,
-        error: fetchError,
-        userId: user.id,
-        eventCount: data?.length || 0
-      });
+      const { data, error: fetchError } = await getUserEvents(user.id);
 
       if (fetchError) {
         console.error('❌ [UserEvents] Erro ao buscar eventos:', fetchError);
@@ -88,7 +77,6 @@ const UserEvents = () => {
   };
 
   useEffect(() => {
-    console.log('🚀 [UserEvents] useEffect disparado, user:', user?.id);
     fetchUserEvents();
   }, [user]);
 
@@ -96,10 +84,7 @@ const UserEvents = () => {
     console.log('🗑️ [UserEvents] Deletando evento:', id);
     
     try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', id);
+      const { error } = await deleteEvent(id);
       
       if (error) {
         console.error('❌ [UserEvents] Erro ao deletar:', error);

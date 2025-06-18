@@ -1,20 +1,19 @@
 
-import { useSupabaseEvents } from './useSupabaseEvents';
+import { useMockEvents } from './useMockEvents';
 import { useRef, useEffect } from 'react';
 
-export const useEventsList = () => {
-  const { events, loading, error, fetchEvents, createEvent, getUserEvents, deleteEvent } = useSupabaseEvents();
+export const useMockEventsList = () => {
+  const { events, loading, error, fetchEvents, createEvent, getUserEvents, deleteEvent } = useMockEvents();
   const initializedRef = useRef(false);
   
-  // Evitar múltiplas chamadas de fetchEvents
   useEffect(() => {
     if (!initializedRef.current) {
-      console.log('🎯 [useEventsList] First initialization - fetching events');
+      console.log('🎯 [useMockEventsList] First initialization - fetching events');
       initializedRef.current = true;
     }
   }, []);
   
-  console.log('🎯 [useEventsList] Status:', { 
+  console.log('🎯 [useMockEventsList] Status:', { 
     eventCount: events.length, 
     loading,
     hasError: !!error

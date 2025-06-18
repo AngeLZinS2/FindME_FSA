@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -26,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useMockAuth } from "@/hooks/useMockAuth";
 
 const registerSchema = z.object({
   name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
@@ -46,7 +45,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const Register = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signUp, loading } = useSupabaseAuth();
+  const { signUp, loading } = useMockAuth();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -71,7 +70,7 @@ const Register = () => {
     } else {
       toast({
         title: "Registro concluído",
-        description: `Bem-vindo(a), ${data.name}! Verifique seu email para confirmar a conta.`,
+        description: `Bem-vindo(a), ${data.name}!`,
       });
       navigate("/perfil");
     }

@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { MapPin, Navigation, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { useEventsList } from "@/hooks/useEventsList";
+import { useMockEventsList } from "@/hooks/useMockEventsList";
 import { calculateDistance, geocodeAddress } from "@/lib/geolocationUtils";
 import EventCard, { EventProps } from "./EventCard";
 
@@ -15,7 +14,7 @@ interface EventWithDistance extends EventProps {
 
 const NearbyEvents = () => {
   const { latitude, longitude, error, loading, requestLocation } = useGeolocation();
-  const { events } = useEventsList();
+  const { events } = useMockEventsList();
   const [nearbyEvents, setNearbyEvents] = useState<EventWithDistance[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [searchRadius, setSearchRadius] = useState<number[]>([5]); // Padrão: 5km

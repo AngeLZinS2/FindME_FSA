@@ -1,57 +1,56 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Calendar, Clock, MapPin, Users, ArrowLeft, ExternalLink } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-
+import { useParams, useNavigate } from "react-router-dom";
+import { Calendar, MapPin, Users, Clock, DollarSign, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import MapLocation from "@/components/MapLocation";
 import SocialMediaLinks from "@/components/SocialMediaLinks";
-import { useEventsList } from "@/hooks/useEventsList";
-import { useEventParticipation } from "@/hooks/useEventParticipation";
-import { useEventAttendees } from "@/hooks/useEventAttendees";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import MapLocation from "@/components/MapLocation";
+import { useMockAuth } from "@/hooks/useMockAuth";
+import { useMockEventsList } from "@/hooks/useMockEventsList";
+import { useMockEventParticipation } from "@/hooks/useMockEventParticipation";
+import { useMockEventAttendees } from "@/hooks/useMockEventAttendees";
 
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const { events } = useEventsList();
-  const { user } = useSupabaseAuth();
-  const { joinEvent, leaveEvent, checkUserParticipation } = useEventParticipation();
-  const { attendeesCount, loading: attendeesLoading } = useEventAttendees(id || '');
-
+  const navigate = useNavigate();
+  const { user } = useMockAuth();
+  const { events } = useMockEventsList();
+  const { joinEvent, leaveEvent, checkUserParticipation, loading: participationLoading } = useMockEventParticipation();
+  
+  const [event, setEvent] = useState<any>(null);
   const [isParticipating, setIsParticipating] = useState(false);
   const [checkingParticipation, setCheckingParticipation] = useState(false);
-  const [participationLoading, setParticipationLoading] = useState(false);
 
-  const event = events.find(e => e.id === id);
+  const { attendeesCount, loading: attendeesLoading } = useMockEventAttendees(id || '');
 
-  // Verificar se o usuário já está participando
+  useEffect(() => {
+    if (id && events.length > 0) {
+      const foundEvent = events.find(e => e.id === id);
+      setEvent(foundEvent || null);
+    }
+  }, [id, events]);
+
   useEffect(() => {
     const checkParticipation = async () => {
-      if (user && id) {
-        console.log('🔍 [EventDetails] Verificando participação do usuário...');
+      if (user && event) {
         setCheckingParticipation(true);
-        try {
-          const participating = await checkUserParticipation(id, user.id);
-          console.log('✅ [EventDetails] Status de participação:', participating);
-          setIsParticipating(participating);
-        } catch (e) {
-          console.error("❌ [EventDetails] Erro ao checar participação:", e);
-          setIsParticipating(false);
-        } finally {
-          setCheckingParticipation(false);
-          console.log('🏁 [EventDetails] Verificação de participação finalizada');
-        }
-      } else {
+        console.log('🔍 [EventDetails] Verificando participação do usuário...');
+        
+        const participating = await checkUserParticipation(event.id, user.id);
+        console.log('✅ [EventDetails] Status de participação:', participating);
+        
+        setIsParticipating(participating);
         setCheckingParticipation(false);
+      } else {
         setIsParticipating(false);
+        setCheckingParticipation(false);
       }
     };
+
     checkParticipation();
-  }, [user, id, checkUserParticipation]);
+  }, [user, event, checkUserParticipation]);
 
   const handleParticipation = async () => {
     if (!user) {

@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import EventCreationForm from "@/components/EventCreationForm";
 import UserEvents from "@/components/UserEvents";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useMockAuth } from "@/hooks/useMockAuth";
 
 // Esquema de validação para o formulário de perfil
 const profileSchema = z.object({
@@ -38,7 +38,7 @@ const Profile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, loading, signOut, updateProfile } = useSupabaseAuth();
+  const { user, loading, signOut, updateProfile } = useMockAuth();
   const defaultTab = searchParams.get("tab") || "profile";
 
   useEffect(() => {

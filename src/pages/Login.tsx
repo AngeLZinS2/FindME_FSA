@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -19,7 +18,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useMockAuth } from "@/hooks/useMockAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Digite um email válido"),
@@ -31,7 +30,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn, loading, user } = useSupabaseAuth();
+  const { signIn, loading, user } = useMockAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -72,6 +71,7 @@ const Login = () => {
           title: "Login bem-sucedido",
           description: "Bem-vindo de volta!",
         });
+        navigate("/perfil");
       }
     } catch (error) {
       console.error('Login exception:', error);

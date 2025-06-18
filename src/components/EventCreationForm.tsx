@@ -1,4 +1,3 @@
-
 import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -27,8 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
 import SocialMediaInputs, { SocialMediaLink } from "@/components/SocialMediaInputs";
 import { getCategoryPlaceholderImage } from "@/lib/imageUtils";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { useSupabaseEvents } from "@/hooks/useSupabaseEvents";
+import { useMockAuth } from "@/hooks/useMockAuth";
+import { useMockEvents } from "@/hooks/useMockEvents";
 
 const socialMediaSchema = z.object({
   id: z.string(),
@@ -57,8 +56,8 @@ interface EventCreationFormProps {
 
 const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
   const { toast } = useToast();
-  const { user } = useSupabaseAuth();
-  const { createEvent } = useSupabaseEvents();
+  const { user } = useMockAuth();
+  const { createEvent } = useMockEvents();
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -127,7 +126,7 @@ const EventCreationForm = ({ onSuccess }: EventCreationFormProps) => {
         console.log('Event created successfully');
         toast({
           title: "Evento criado com sucesso!",
-          description: `O evento "${data.title}" foi criado e está aguardando aprovação.`,
+          description: `O evento "${data.title}" foi criado com sucesso.`,
         });
         
         form.reset();
