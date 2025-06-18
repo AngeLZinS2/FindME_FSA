@@ -7,69 +7,59 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 interface EventFiltersProps {
-  capacityRange: number[];
-  setCapacityRange: (range: number[]) => void;
-  showOnlyAvailable: boolean;
-  setShowOnlyAvailable: (show: boolean) => void;
-  resetFilters: () => void;
-  onClose: () => void;
+  selectedCategory: string;
+  selectedLocation: string;
+  onCategoryChange: (category: string) => void;
+  onLocationChange: (location: string) => void;
 }
 
 const EventFilters: React.FC<EventFiltersProps> = ({
-  capacityRange,
-  setCapacityRange,
-  showOnlyAvailable,
-  setShowOnlyAvailable,
-  resetFilters,
-  onClose,
+  selectedCategory,
+  selectedLocation,
+  onCategoryChange,
+  onLocationChange,
 }) => {
+  const categories = ["Todas", "Tecnologia", "Música", "Arte", "Esportes", "Educação"];
+  const locations = ["Todas", "São Paulo", "Rio de Janeiro", "Belo Horizonte", "Salvador", "Brasília"];
+
   return (
-    <div className="mt-4 p-4 bg-background border rounded-md shadow-sm mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold">Filtros</h2>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X size={16} />
-        </Button>
-      </div>
-      
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Capacidade do Evento</h3>
-          <Slider 
-            value={capacityRange} 
-            min={0} 
-            max={2000} 
-            step={50} 
-            onValueChange={setCapacityRange} 
-          />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{capacityRange[0]} pessoas</span>
-            <span>{capacityRange[1]} pessoas</span>
-          </div>
-        </div>
-        
-        <div>
-          <h3 className="text-sm font-medium mb-4">Opções</h3>
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="available-only" 
-              checked={showOnlyAvailable} 
-              onCheckedChange={setShowOnlyAvailable} 
-            />
-            <Label htmlFor="available-only">Mostrar apenas eventos disponíveis</Label>
-          </div>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-medium mb-2">Categoria</h3>
+        <div className="space-y-2">
+          {categories.map((category) => (
+            <label key={category} className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                value={category}
+                checked={selectedCategory === category}
+                onChange={(e) => onCategoryChange(e.target.value)}
+                className="text-primary"
+              />
+              <span className="text-sm">{category}</span>
+            </label>
+          ))}
         </div>
       </div>
-      
-      <div className="flex justify-end mt-6">
-        <Button 
-          variant="outline" 
-          className="mr-2"
-          onClick={resetFilters}
-        >
-          Limpar Filtros
-        </Button>
-        <Button onClick={onClose}>Aplicar</Button>
+
+      <div>
+        <h3 className="font-medium mb-2">Localização</h3>
+        <div className="space-y-2">
+          {locations.map((location) => (
+            <label key={location} className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                name="location"
+                value={location}
+                checked={selectedLocation === location}
+                onChange={(e) => onLocationChange(e.target.value)}
+                className="text-primary"
+              />
+              <span className="text-sm">{location}</span>
+            </label>
+          ))}
+        </div>
       </div>
     </div>
   );
